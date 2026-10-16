@@ -1,0 +1,17 @@
+# Netlify configuration for Five Nights at Xavier's
+# Pure static site: no build step, publish the repository root.
+[build]
+  publish = "."
+  command = "echo 'Static site - no build needed'"
+
+# Photos may be swapped often, so don't let browsers cache them for long.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=300, must-revalidate"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

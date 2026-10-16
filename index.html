@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Five Nights at Xavier's</title>
+  <meta name="description" content="Five Nights at Xavier's — a browser horror parody. Help Raoul Mann survive until 6 AM.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23000'/%3E%3Ccircle cx='22' cy='30' r='7' fill='%23ff2a1a'/%3E%3Ccircle cx='42' cy='30' r='7' fill='%23ff2a1a'/%3E%3C/svg%3E">
+
+  <!-- Fonts (optional — the game falls back to system fonts if offline) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Special+Elite&family=VT323&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- The stage keeps a fixed 16:9 aspect ratio and scales to fit any window. -->
+  <div id="stage">
+    <canvas id="game" width="1280" height="720" aria-label="Game view"></canvas>
+
+    <!-- CSS horror overlays (stacked on top of the canvas) -->
+    <div class="fx fx-scanlines" aria-hidden="true"></div>
+    <div class="fx fx-crt" aria-hidden="true"></div>
+    <div class="fx fx-vignette" aria-hidden="true"></div>
+
+    <!-- ================= IN-GAME HUD ================= -->
+    <div id="hud" class="hidden">
+      <div id="hud-top">
+        <div id="hud-night">Night 1</div>
+        <div id="hud-clock">12 <span>AM</span></div>
+      </div>
+
+      <div id="hud-battery">
+        <span class="label">FLASHLIGHT</span>
+        <div class="bar"><div class="fill"></div></div>
+        <span class="pct">100%</span>
+      </div>
+
+      <div id="alerts" aria-live="polite"></div>
+      <div id="hint"></div>
+
+      <!-- Navigation buttons (mouse + touch). Keyboard: WASD / arrows. -->
+      <button class="nav" id="nav-left"   data-go="left"   title="Left door (A)">&#9664;<span>LEFT DOOR</span></button>
+      <button class="nav" id="nav-right"  data-go="right"  title="Right door (D)"><span>RIGHT DOOR</span>&#9654;</button>
+      <button class="nav" id="nav-closet" data-go="closet" title="Closet (W)">&#9650;<span>CLOSET</span></button>
+      <button class="nav" id="nav-bed"    data-go="bed"    title="Turn around to the bed (S)"><span>BED</span>&#9660;</button>
+      <button class="nav" id="nav-back"   data-go="back"   title="Back to the room (S)"><span>BACK</span>&#9660;</button>
+      <button id="hold-btn" title="Hold to close (Space / Right-click)">HOLD<br>TO CLOSE</button>
+      <button id="flash-btn" title="Hold for flashlight (Mouse / F)">LIGHT</button>
+    </div>
+
+    <!-- ================= SCREENS ================= -->
+    <section id="screen-loading" class="screen">
+      <div class="loading-box">
+        <h2 class="glitch" data-text="LOADING">LOADING</h2>
+        <div class="progress"><div class="progress-fill"></div></div>
+        <p class="loading-status">Checking /assets/ for photos…</p>
+        <button id="enter-btn" class="btn hidden">CLICK TO ENTER</button>
+        <p class="small dim">Best with headphones. Sound is a weapon in this house.</p>
+      </div>
+    </section>
+
+    <section id="screen-menu" class="screen hidden">
+      <div class="menu-left">
+        <h1 class="title" data-text="Five Nights at Xavier's">Five Nights<br>at <span>Xavier's</span></h1>
+        <p class="tagline">Raoul Mann. One bedroom. Three of them.</p>
+        <nav class="menu-buttons">
+          <button class="btn" data-action="new">New Game</button>
+          <button class="btn" data-action="continue" id="continue-btn">Continue <small></small></button>
+          <button class="btn" data-action="nights">Night Select</button>
+          <button class="btn" data-action="howto">How to Play</button>
+          <button class="btn" data-action="guide">Asset Guide</button>
+        </nav>
+        <p class="menu-footer">A fan-made parody of <em>Five Nights at Freddy's 4</em>. Not affiliated with Scott Cawthon.</p>
+      </div>
+      <div class="menu-right">
+        <canvas id="menu-portrait" width="320" height="320"></canvas>
+        <p class="portrait-caption">RAOUL MANN<br><span>survive until 6 AM</span></p>
+      </div>
+    </section>
+
+    <section id="screen-nights" class="screen panel-screen hidden">
+      <div class="panel">
+        <h2>Night Select</h2>
+        <div id="night-grid" class="night-grid"></div>
+        <button class="btn back" data-action="menu">&larr; Back</button>
+      </div>
+    </section>
+
+    <section id="screen-howto" class="screen panel-screen hidden">
+      <div class="panel scroll">
+        <h2>How to Play</h2>
+        <p>You are <b>Raoul Mann</b>. Survive from <b>12 AM to 6 AM</b> in your bedroom. Three of them are coming.</p>
+        <table class="keys">
+          <tr><td><kbd>A</kbd> / <kbd>&larr;</kbd></td><td>Run to the <b>Left Door</b></td></tr>
+          <tr><td><kbd>D</kbd> / <kbd>&rarr;</kbd></td><td>Run to the <b>Right Door</b></td></tr>
+          <tr><td><kbd>W</kbd> / <kbd>&uarr;</kbd></td><td>Check the <b>Closet</b></td></tr>
+          <tr><td><kbd>S</kbd> / <kbd>&darr;</kbd></td><td>Turn around to the <b>Bed</b> &middot; or go <b>back</b> to the room</td></tr>
+          <tr><td>Hold <kbd>Mouse</kbd> / <kbd>F</kbd> / <kbd>Shift</kbd></td><td>Flashlight (aim with the mouse). Battery is limited!</td></tr>
+          <tr><td>Hold <kbd>Space</kbd> / <kbd>Right-click</kbd></td><td>Hold a door or the closet shut</td></tr>
+          <tr><td><kbd>Esc</kbd> &middot; <kbd>H</kbd> &middot; <kbd>M</kbd></td><td>Pause &middot; Toggle hints &middot; Mute</td></tr>
+        </table>
+        <h3>The Three</h3>
+        <ul class="villain-list">
+          <li><b class="c-steven">Steven Pivac</b> — Left hall. Heavy footsteps. <b>Far away?</b> Flash him and he retreats. <b>Heavy breathing at the door?</b> Do <u>NOT</u> use the light — hold the door until he leaves.</li>
+          <li><b class="c-xavier">Xavier</b> — Right hall. Fast, and he <i>whispers</i>. Same rules as Steven, but less patient. He also sends <b>Little Xaviers</b> onto your bed: turn around and flash them away before three gather… or <i>he</i> comes for you.</li>
+          <li><b class="c-zynovan">Zynovan Snusvac</b> — The closet. Listen for a rattling snus tin. Check the closet and hold it shut to push him back. If he's fully out, hold the closet closed until the banging stops.</li>
+        </ul>
+        <p class="dim">Tip: stand at a door with the light OFF to <b>listen</b>. Headphones help — sounds are panned left/right.</p>
+        <button class="btn back" data-action="menu">&larr; Back</button>
+      </div>
+    </section>
+
+    <section id="screen-guide" class="screen panel-screen hidden">
+      <div class="panel scroll">
+        <h2>Asset Guide &mdash; add your friends' faces</h2>
+        <p>The game runs out-of-the-box with vector monsters. Drop real photos into the repository's <code>/assets/</code> folders and they are <b>automatically</b> color-graded (desaturated, high contrast, film grain, dark vignette, feathered edges) so they melt into the darkness.</p>
+        <ol>
+          <li>Open your GitHub repo &rarr; navigate into the folder (e.g. <code>assets/villains/xavier/</code>).</li>
+          <li>Click <b>Add file &rarr; Upload files</b> and drag the photo in.</li>
+          <li>Rename it to the exact file name below (lowercase). <code>.png</code>, <code>.jpg</code>, <code>.jpeg</code> or <code>.webp</code> all work.</li>
+          <li>Commit. Netlify redeploys automatically; refresh the game.</li>
+        </ol>
+        <pre class="tree">assets/
+├── player/
+│   └── raoul.png         ← Raoul Mann headshot (menu &amp; win screen)
+└── villains/
+    ├── xavier/
+    │   ├── normal.png    ← headshot: becomes the animatronic's face
+    │   ├── jumpscare.png ← (optional) full-screen scream photo
+    │   └── hallway.png   ← (optional) full-body photo seen down the hall
+    ├── steven/   (same three files)
+    └── zynovan/  (same three files)</pre>
+        <p><b>Photo tips:</b> front-facing headshots, face centred, roughly square, &le; 2&nbsp;MB. For <code>jumpscare.png</code> a wide-open-mouth "scream" face is ideal. If <code>jumpscare.png</code> is missing the game zooms the <code>normal.png</code> face on the robot body instead.</p>
+        <h3>Currently detected</h3>
+        <div id="asset-status" class="asset-status"></div>
+        <button class="btn back" data-action="menu">&larr; Back</button>
+      </div>
+    </section>
+
+    <section id="screen-intro" class="screen hidden">
+      <div class="intro">
+        <div class="intro-time">12:00 AM</div>
+        <div class="intro-night">Night 1</div>
+        <p class="intro-msg"></p>
+        <p class="intro-tip"></p>
+        <p class="small dim blink">click to begin</p>
+      </div>
+    </section>
+
+    <section id="screen-pause" class="screen panel-screen hidden">
+      <div class="panel narrow">
+        <h2>Paused</h2>
+        <button class="btn" data-action="resume">Resume</button>
+        <button class="btn" data-action="restart">Restart Night</button>
+        <button class="btn" data-action="quit">Quit to Menu</button>
+      </div>
+    </section>
+
+    <section id="screen-gameover" class="screen hidden">
+      <div class="gameover">
+        <canvas id="gameover-portrait" width="300" height="300"></canvas>
+        <h2 class="glitch" data-text="GAME OVER">GAME OVER</h2>
+        <p id="go-who"></p>
+        <p id="go-quote"></p>
+        <div class="row">
+          <button class="btn" data-action="restart">Try Again</button>
+          <button class="btn" data-action="quit">Main Menu</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-win" class="screen hidden">
+      <div class="win">
+        <div class="win-clock"><span class="roll"><span>5</span><span>6</span></span> AM</div>
+        <p id="win-msg"></p>
+        <canvas id="win-portrait" width="200" height="200"></canvas>
+        <div class="row">
+          <button class="btn" data-action="next" id="next-btn">Next Night</button>
+          <button class="btn" data-action="quit">Main Menu</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="rotate-hint">Rotate your device to landscape &#8635;</div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
