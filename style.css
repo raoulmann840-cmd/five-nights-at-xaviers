@@ -244,7 +244,7 @@ kbd {
 .gameover { text-align: center; }
 .gameover h2 { font-family: var(--font-title); font-weight: normal; font-size: 8cqw; margin: 0; color: var(--blood-bright); }
 #go-portrait { width: 17cqw; height: 17cqw; animation: go-jitter 1.6s infinite; filter: drop-shadow(0 0 1.5cqw rgba(200,0,0,0.5)); }
-@keyframes go-jitter { 0%, 90%, 100% { transform: none; } 92% { transform: translate(-0.4cqw, 0.2cqw) skewX(6deg); filter: hue-rotate(60deg); } 95% { transform: translate(0.4cqw, -0.2cqw) skewX(-5deg); } }
+@keyframes go-jitter { 0%, 90%, 100% { transform: none; } 92% { transform: translate(-0.4cqw, 0.2cqw) skewX(6deg); } 95% { transform: translate(0.4cqw, -0.2cqw) skewX(-5deg); } }
 #go-who { font-size: 1.8cqw; margin: 0.5cqh 0; }
 #go-quote { font-size: 1.6cqw; color: #ff8a7a; font-style: italic; margin: 0 0 3cqh; }
 .row { display: flex; gap: 3cqw; justify-content: center; }
