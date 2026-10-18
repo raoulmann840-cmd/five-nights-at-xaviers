@@ -83,22 +83,17 @@ const VILLAINS = {
 
 const NIGHTS = [
   { steven: 4,  xavier: 0,  minis: 3,  zynovan: 0,
-    msg: '"Detention, Raoul. All night. Steven will be your hall monitor." — X',
-    tip: 'Steven Pivac walks the HALLWAY. Far down the hall? Beam him. Breathing at the door? Light OFF — hold the door. Little Xaviers may climb onto the desks behind you: turn around and flash them.' },
+    msg: '"Detention, Raoul. All night." — X', tip: 'Survive until 6 AM.' },
   { steven: 7,  xavier: 3,  minis: 5,  zynovan: 2,
-    msg: '"I found a key to the storage closet." — X',
-    tip: 'Xavier now lurks in the STORAGE CLOSET. He doesn\'t breathe — he whispers. Something is creaking inside the supply locker…' },
+    msg: '"I brought some friends." — X', tip: 'Survive until 6 AM.' },
   { steven: 9,  xavier: 7,  minis: 7,  zynovan: 7,
-    msg: '"Zynovan is restocking the supply locker." — X',
-    tip: 'Check the SUPPLY LOCKER. Hold it shut to push Zynovan back. If he\'s fully out, hold it until the banging stops.' },
+    msg: '"Something new moved in tonight." — X', tip: 'Survive until 6 AM.' },
   { steven: 12, xavier: 11, minis: 9,  zynovan: 11,
-    msg: '"Pop quiz, Raoul." — X',
-    tip: 'They\'re faster now. Stand at a door with the light OFF and listen.' },
+    msg: '"Pop quiz, Raoul." — X', tip: 'Survive until 6 AM.' },
   { steven: 16, xavier: 16, minis: 12, zynovan: 15,
-    msg: '"Final exam. I\'m grading you myself." — X',
-    tip: 'Xavier is done playing. Survive.' },
+    msg: '"Final exam. I\'m grading you myself." — X', tip: 'Survive until 6 AM.' },
   { steven: 20, xavier: 20, minis: 16, zynovan: 20,
-    msg: '"N̷I̵G̴H̸T̷M̶A̵R̸E̶."', tip: 'Nightmare mode. Everything. All at once.' },
+    msg: '"N̷I̵G̴H̸T̷M̶A̵R̸E̶."', tip: 'Survive until 6 AM.' },
 ];
 
 /* ==========================================================================
@@ -550,24 +545,6 @@ const TexGen = {
     return this.pair(r);
   },
 
-  fur(hex, seed) {
-    const S = 512, R = seeded(seed), c = hexRGB(hex);
-    const r = this.pixels(S, S, (x, y, o) => {
-      const n = Noise.fbm(x / S * 6, y / S * 6, 4, 6), m = Noise.fbm(x / S * 2 + 3, y / S * 2, 3, 2);
-      const fib = Noise.fbm(x / S * 64, y / S * 16, 2, 64, 16);
-      const k = 0.62 + n * 0.45 - m * 0.3 + (fib - 0.5) * 0.35;
-      o[0] = c[0] * k; o[1] = c[1] * k; o[2] = c[2] * k; o[3] = 90 + fib * 150;
-    });
-    const x = r.x;
-    for (let i = 0; i < 3000; i++) {
-      const px = R() * S, py = R() * S, a = Math.PI / 2 + (R() - 0.5) * 1.1, l = 3 + R() * 9;
-      x.strokeStyle = R() < 0.55 ? 'rgba(0,0,0,0.2)' : 'rgba(255,240,220,0.07)'; x.lineWidth = 1;
-      x.beginPath(); x.moveTo(px, py); x.lineTo(px + Math.cos(a) * l, py + Math.sin(a) * l); x.stroke();
-    }
-    this.stains(x, S, S, 10, R, '20,10,5');
-    return this.pair(r);
-  },
-
   metal(hex, seed) {
     const S = 256, R = seeded(seed), c = hexRGB(hex);
     const r = this.pixels(S, S, (x, y, o) => {
@@ -577,6 +554,89 @@ const TexGen = {
       o[0] = col[0] * k; o[1] = col[1] * k; o[2] = col[2] * k; o[3] = rust > 0.66 ? 90 + rust * 100 : 180;
     });
     this.scratches(r.x, S, S, 40, 'rgba(230,230,230,A)', R);
+    return this.pair(r);
+  },
+
+  /* Blood: soaked-through patches, a collar of blood running down from the
+   * neck, fine spray, and thin drips. Dark and wet, not cartoon-red. */
+  bloodify(x, w, h, R, amt = 1, collar = true) {
+    const reds = ['#7a0000', '#8f0606', '#5c0101', '#a00c0c', '#6a0303'];
+    for (let i = 0; i < 4 * amt; i++) {           // soaked patches
+      const cx = R() * w, cy = R() * h, r = 50 + R() * 110, g = x.createRadialGradient(cx, cy, r * 0.15, cx, cy, r);
+      g.addColorStop(0, `rgba(120,0,0,${0.7 + R() * 0.25})`); g.addColorStop(0.7, 'rgba(100,0,0,0.35)'); g.addColorStop(1, 'rgba(90,0,0,0)');
+      x.fillStyle = g; x.fillRect(cx - r, cy - r, r * 2, r * 2);
+    }
+    if (collar) {                                  // blood pouring down from the neck
+      const g = x.createLinearGradient(0, 0, 0, h * 0.4);
+      g.addColorStop(0, 'rgba(110,0,0,0.95)'); g.addColorStop(0.5, 'rgba(100,0,0,0.55)'); g.addColorStop(1, 'rgba(90,0,0,0)');
+      x.fillStyle = g; x.fillRect(0, 0, w, h * 0.4);
+    }
+    for (let i = 0; i < 18 * amt; i++) {          // fine spray around a few impact points
+      const cx = R() * w, cy = R() * h;
+      x.fillStyle = reds[(R() * reds.length) | 0];
+      for (let k = 0; k < 40; k++) {
+        const a = R() * 6.28, d = Math.pow(R(), 2) * 45, dr = 0.6 + R() * 2.4;
+        x.globalAlpha = 0.6 + R() * 0.4; x.beginPath(); x.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d * 1.3, dr, 0, 7); x.fill();
+      }
+    }
+    x.globalAlpha = 1; x.lineCap = 'round';
+    for (let i = 0; i < 22 * amt; i++) {          // thin drips running down
+      let px = R() * w, py = collar && R() < 0.6 ? R() * h * 0.25 : R() * h * 0.8;
+      const len = 30 + R() * 260, wd = 1.2 + R() * 2.8;
+      x.strokeStyle = reds[(R() * reds.length) | 0]; x.lineWidth = wd;
+      x.beginPath(); x.moveTo(px, py);
+      for (let t = 0; t < len; t += 10) { px += (R() - 0.5) * 2; py += 10; x.lineTo(px, py); }
+      x.stroke();
+      x.fillStyle = x.strokeStyle; x.beginPath(); x.ellipse(px, py + 2, wd * 0.9, wd * 1.5, 0, 0, 7); x.fill();
+    }
+  },
+
+  /* Torn, bloodstained clothing. kind: blazer | singlet | shirt | trousers */
+  cloth(kind, seed, gore = 1) {
+    const S = 512, R = seeded(seed);
+    const base = { blazer: [44, 88, 52], singlet: [196, 190, 172], shirt: [164, 182, 204], trousers: [38, 38, 44] }[kind];
+    const r = this.pixels(S, S, (x, y, o) => {
+      const weave = (x + y) % 4 < 2 ? 1 : 0.94, n = Noise.fbm(x / S * 8, y / S * 8, 4, 8), dirt = Noise.fbm(x / S * 3 + 9, y / S * 3, 3, 3);
+      let c = base, k = (0.82 + n * 0.25 - dirt * 0.25) * weave;
+      if (kind === 'blazer') { const sx = x % 26; if (sx === 9 || sx === 10) c = [104, 40, 40]; else if (sx === 13) c = [150, 146, 128]; }
+      if (kind === 'singlet') k *= 0.92 + 0.08 * Math.sin(x * 1.3);
+      o[0] = c[0] * k; o[1] = c[1] * k; o[2] = c[2] * k; o[3] = 140 + (weave - 0.97) * 600 + n * 40;
+    });
+    this.stains(r.x, S, S, 8, R, '40,30,20');
+    // rips: dark torn holes with frayed edges
+    for (let i = 0; i < 5; i++) {
+      const cx = R() * S, cy = R() * S, rw = 10 + R() * 26;
+      r.x.fillStyle = 'rgba(30,8,6,0.95)'; r.x.beginPath();
+      for (let a = 0; a < 6.3; a += 0.4) { const rr = rw * (0.6 + R() * 0.6); r.x.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 1.6); }
+      r.x.fill();
+      r.bx.fillStyle = '#000'; r.bx.beginPath(); r.bx.arc(cx, cy, rw, 0, 7); r.bx.fill();
+    }
+    this.bloodify(r.x, S, S, R, gore, kind !== 'trousers');
+    return this.pair(r);
+  },
+
+  /* Skin with bruises, cuts and smeared blood. */
+  skin(hex, seed) {
+    const S = 512, R = seeded(seed), c = hexRGB(hex);
+    const r = this.pixels(S, S, (x, y, o) => {
+      const n = Noise.fbm(x / S * 10, y / S * 10, 4, 10), m = Noise.fbm(x / S * 2 + 4, y / S * 2, 3, 2);
+      let k = 0.88 + n * 0.2 - m * 0.12;
+      if (hash2(x, y) > 0.97) k *= 0.9;
+      o[0] = c[0] * k; o[1] = c[1] * k; o[2] = c[2] * k; o[3] = 150 + n * 60;
+    });
+    for (let i = 0; i < 6; i++) {                 // bruises
+      const bx = R() * S, by = R() * S, br = 20 + R() * 40, g = r.x.createRadialGradient(bx, by, 0, bx, by, br);
+      g.addColorStop(0, 'rgba(60,20,50,0.45)'); g.addColorStop(1, 'rgba(60,20,50,0)');
+      r.x.fillStyle = g; r.x.fillRect(bx - br, by - br, br * 2, br * 2);
+    }
+    r.x.lineCap = 'round';
+    for (let i = 0; i < 8; i++) {                 // cuts
+      const cx = R() * S, cy = R() * S, a = R() * 3, l = 20 + R() * 50;
+      r.x.strokeStyle = '#3a0202'; r.x.lineWidth = 3 + R() * 3;
+      r.x.beginPath(); r.x.moveTo(cx, cy); r.x.lineTo(cx + Math.cos(a) * l, cy + Math.sin(a) * l); r.x.stroke();
+      r.bx.strokeStyle = '#000'; r.bx.lineWidth = 4; r.bx.beginPath(); r.bx.moveTo(cx, cy); r.bx.lineTo(cx + Math.cos(a) * l, cy + Math.sin(a) * l); r.bx.stroke();
+    }
+    this.bloodify(r.x, S, S, R, 1.1, false);
     return this.pair(r);
   },
 
@@ -614,8 +674,9 @@ function makeTextures() {
   T.boxes = [TexGen.cardboard('ART SUPPLIES', 91), TexGen.cardboard('XMAS', 92), TexGen.cardboard('DO NOT OPEN', 93), TexGen.cardboard('TESTS 2019', 94)];
   T.metalDark = TexGen.metal('#5a5a5a', 95);
   T.shelf = TexGen.metal('#7a7d7f', 96);
-  T.fur = {}; T.belly = {};
-  Object.entries(VILLAINS).forEach(([id, V], i) => { T.fur[id] = TexGen.fur(V.fur, 100 + i); T.belly[id] = TexGen.fur(V.belly, 200 + i); });
+  T.skin = {}; T.top = {};
+  Object.entries(HUMANS).forEach(([id, H], i) => { T.skin[id] = TexGen.skin(H.skin, 100 + i); T.top[id] = TexGen.cloth(H.top, 200 + i, 1.8); });
+  T.pants = TexGen.cloth('trousers', 300, 0.6);
   T.exit = TexGen.sign(256, 96, (x, w, h) => {
     x.fillStyle = '#1a0606'; x.fillRect(0, 0, w, h); x.fillStyle = '#ff2a1a';
     x.font = 'bold 70px Arial'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('EXIT', w / 2, h / 2 + 4);
@@ -1007,155 +1068,102 @@ function buildWorld(T) {
 }
 
 /* ==========================================================================
- * 6. ANIMATRONICS — procedural 3D bodies. A face photo becomes the face.
+ * 6. VILLAINS — bloodied human bodies; the face photo is pasted on the head.
  * ========================================================================== */
-function buildAnimatronic(id, T, faceTex, faceBump) {
-  const V = VILLAINS[id];
-  const g = new THREE.Group(); g.userData.id = id;
-  const fur = M({ map: T.fur[id].map, bump: T.fur[id].bump, bumpScale: 2.5, rough: 0.95, spec: 0.05 });
-  const furLight = M({ map: T.belly[id].map, bump: T.belly[id].bump, bumpScale: 2.5, rough: 0.95, spec: 0.05 });
-  const endo = M({ map: T.metalDark.map, bump: T.metalDark.bump, color: 0x9a9a9a, rough: 0.4, metal: 0.55, spec: 0.7 });
-  const bone = M({ color: 0xd8cfb0, rough: 0.35, spec: 0.5 });
-  const socket = M({ color: 0x040303, rough: 0.9 });
-  const pupil = M({ color: V.eye, emissive: 1, rough: 0.2 });
-  const gum = M({ color: 0x2a0606, rough: 0.6 });
-  const thin = id === 'zynovan' ? 0.85 : id === 'steven' ? 1.08 : 1;
+/* Each villain is a bloodied human in what they were wearing; the face photo is
+ * pasted on the front of the head. */
+const HUMANS = {
+  xavier:  { skin: '#5e3b26', hair: '#3a2414', top: 'blazer',  sleeves: true,  tie: true },
+  steven:  { skin: '#c39478', hair: '#6a645c', top: 'singlet', sleeves: false, tie: false },
+  zynovan: { skin: '#d8ae94', hair: '#2a1e16', top: 'shirt',   sleeves: true,  tie: false },
+};
 
-  const hips = new THREE.Group(); hips.position.y = 0.95; g.add(hips);
-  for (const s of [-1, 1]) {
-    const leg = new THREE.Group(); leg.position.set(s * 0.17 * thin, 0, 0); hips.add(leg);
-    addMesh(new THREE.CapsuleGeometry(0.1 * thin, 0.26, 6, 14), fur, leg, 0, -0.2, 0);
-    addMesh(SPH(0.055, 12, 10), endo, leg, 0, -0.45, 0);
-    addMesh(CYL(0.025, 0.025, 0.16, 8), endo, leg, 0, -0.45, 0);
-    addMesh(new THREE.CapsuleGeometry(0.085 * thin, 0.24, 6, 14), fur, leg, 0, -0.68, 0);
-    addMesh(BOX(0.17 * thin, 0.09, 0.3), fur, leg, 0, -0.9, 0.06);
-    for (let k = -1; k <= 1; k++) addMesh(new THREE.ConeGeometry(0.014, 0.06, 6), bone, leg, k * 0.045, -0.92, 0.23, Math.PI / 2, 0, 0);
-  }
-  const torso = new THREE.Group(); torso.position.y = 0.95; g.add(torso);
-  const rx = 0.26 * thin, rz = rx * 0.76;
-  const body = addMesh(new THREE.CapsuleGeometry(rx, 0.42, 10, 28), fur, torso, 0, 0.44, 0); body.scale.set(1, 1, 0.76);
-  addMesh(SPH(rx * 1.05, 24, 16), fur, torso, 0, 0.66, -0.01).scale.set(1.25, 0.6, 0.85);           // hunched shoulders
-  const belly = addMesh(SPH(0.19 * thin, 28, 20), furLight, torso, 0, 0.36, rz - 0.07); belly.scale.set(1, 1.2, 0.5);
-  // torn holes: dark craters with exposed metal and stuffing
-  const R = seeded(id.length * 97);
-  g.updateMatrixWorld(true);
-  for (let k = 0; k < 9; k++) {
-    const th = (R() - 0.5) * 2.4, y = 0.22 + R() * 0.5, hr = 0.03 + R() * 0.035;
-    const px = Math.sin(th) * rx * 1.01, pz = Math.cos(th) * rz * 1.01;
-    const nrm = new THREE.Vector3(Math.sin(th) / rx, 0, Math.cos(th) / rz).normalize();
-    const hole = addMesh(new THREE.CircleGeometry(hr, 14), socket, torso, px, y, pz);
-    hole.lookAt(torso.localToWorld(new THREE.Vector3(px, y, pz).add(nrm)));
-    hole.scale.set(1, 1.35, 1); hole.castShadow = false;
-    if (R() < 0.5) addMesh(CYL(0.007, 0.007, hr * 1.5, 6), endo, torso, px + nrm.x * 0.004, y, pz + nrm.z * 0.004, 0, 0, R() * 3).castShadow = false;
-  }
-  addMesh(new THREE.CircleGeometry(0.075, 16), socket, torso, -0.12 * thin, 0.55, 0.228, 0, -0.3, 0);       // torn hole
-  [[0x8a1010, 0], [0xa08010, 0.03]].forEach(([col, o]) => {
-    const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(-0.12 * thin + o, 0.55, 0.23), new THREE.Vector3(-0.15 * thin + o, 0.42, 0.27), new THREE.Vector3(-0.1 * thin + o, 0.3, 0.26)]);
-    addMesh(new THREE.TubeGeometry(curve, 12, 0.008, 6), M({ color: col, rough: 0.5 }), torso);
-  });
-  addMesh(CYL(0.05, 0.06, 0.18, 10), endo, torso, 0, 0.88, 0);
-  if (id === 'xavier') {
-    addMesh(BOX(0.18, 0.07, 0.05), M({ color: 0x0d0d0d, rough: 0.5 }), torso, 0, 0.8, 0.22);
-    [0.55, 0.38].forEach((y) => addMesh(SPH(0.022, 10, 8), M({ color: 0x111111, rough: 0.3 }), torso, 0, y, 0.24));
-  } else if (id === 'steven') {
-    addMesh(BOX(0.16, 0.06, 0.05), M({ color: 0x9a0f22, rough: 0.5 }), torso, 0, 0.8, 0.22);
-  } else {
-    const tin = [M({ color: 0xd8e2dc, rough: 0.35, metal: 0.4, spec: 0.6 }), M({ map: T.snus.map, rough: 0.35, spec: 0.6 }), M({ color: 0xd8e2dc })];
-    [[0.1, 0.62], [-0.04, 0.45]].forEach(([x, y]) => addMesh(CYL(0.055, 0.055, 0.025, 20), tin, torso, x, y, 0.25, Math.PI / 2, 0, 0));
-  }
-
-  const head = new THREE.Group(); head.position.set(0, 1.07, 0.02); torso.add(head);
-  buildHead(head, id, { fur, furLight, endo, bone, socket, pupil, gum }, T, faceTex, faceBump);
-
-  const arms = [];
-  for (const s of [-1, 1]) {
-    const sh = new THREE.Group(); sh.position.set(s * 0.36 * thin, 0.72, 0); torso.add(sh);
-    addMesh(SPH(0.1 * thin, 14, 12), fur, sh);
-    addMesh(new THREE.CapsuleGeometry(0.075 * thin, 0.22, 6, 12), fur, sh, 0, -0.2, 0);
-    const el = new THREE.Group(); el.position.set(0, -0.4, 0); sh.add(el);
-    addMesh(SPH(0.05, 10, 8), endo, el);
-    addMesh(new THREE.CapsuleGeometry(0.065 * thin, 0.2, 6, 12), fur, el, 0, -0.17, 0);
-    const hand = new THREE.Group(); hand.position.set(0, -0.37, 0); el.add(hand);
-    addMesh(SPH(0.075, 12, 10), fur, hand).scale.set(1, 1.1, 0.6);
-    for (let f = 0; f < 4; f++) {
-      const fx = (f - 1.5) * 0.032;
-      addMesh(CYL(0.012, 0.014, 0.09, 6), endo, hand, fx, -0.1, 0.01);
-      addMesh(new THREE.ConeGeometry(0.015, 0.14, 6), bone, hand, fx, -0.22, 0.015, Math.PI + 0.15, 0, 0);
-    }
-    arms.push({ sh, el, s });
-  }
-  g.userData.rig = { torso, head, arms, jaw: head.userData.jaw };
-  g.userData.facePlate = head.userData.facePlate || null;
-  g.traverse((o) => { if (o.isMesh) o.userData.actor = id; });
-  return g;
-}
-
-/* A pasted-on photo: unlit (full colour in the bake) and emissive, so it stays
- * clear and bright even outside the flashlight beam. */
+/* The pasted-on face photo: unlit, so it shows at full colour in the beam —
+ * but not emissive, so it is invisible in the dark (no free hints). */
 function faceMaterial(tex) {
   const m = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide });
-  m.userData.emissive = 0.45; m.userData.spec = 0;
+  m.userData.emissive = 0; m.userData.spec = 0;
   return m;
 }
 
-function buildHead(head, id, m, T, faceTex, faceBump) {
-  addMesh(SPH(0.24, 32, 24), m.fur, head).scale.set(1, 0.95, 0.95);
-  let mouthY = -0.12;
-  if (faceTex) {
-    // The photo IS the face: it covers the whole front of the skull (no 3D eyes,
-    // snout, jaw or teeth), and is shaded/lit together with the 3D body.
-    const plate = addMesh(new THREE.PlaneGeometry(0.5, 0.5), faceMaterial(faceTex), head, 0, -0.01, 0.245);
-    plate.castShadow = false; head.userData.facePlate = plate;
-  } else {
-    addMesh(SPH(0.14, 24, 16), m.furLight, head, 0, -0.07, 0.17).scale.set(1.15, 0.75, 0.8);
-    addMesh(SPH(0.035, 12, 10), M({ color: id === 'steven' ? 0x9a2040 : 0x140a05, rough: 0.3, spec: 0.6 }), head, 0, -0.02, 0.285).scale.set(1.3, 0.8, 0.8);
-    for (const s of [-1, 1]) {
-      addMesh(SPH(0.06, 16, 12), m.socket, head, s * 0.09, 0.05, 0.18).scale.set(1, 1.1, 0.6);
-      addMesh(SPH(0.016, 10, 8), m.pupil, head, s * 0.09, 0.05, 0.21);
-      addMesh(BOX(0.11, 0.025, 0.035), m.fur, head, s * 0.09, 0.13, 0.2, 0, 0, s * 0.38);
-    }
-  }
-  const jaw = new THREE.Group(); jaw.position.set(0, mouthY + 0.01, 0); head.add(jaw);
-  head.userData.jaw = jaw;     // empty when a face photo is used (poses still animate it)
-  if (!faceTex) {
-    for (let row = 0; row < 2; row++) for (let i = 0; i < 13; i++) {
-      const a = (i / 12 - 0.5) * 1.75, rr = 0.155 - row * 0.03;
-      addMesh(new THREE.ConeGeometry(0.016 - row * 0.004, 0.07 + (i % 3) * 0.018 - row * 0.02, 6), m.bone, head, Math.sin(a) * rr, mouthY, Math.cos(a) * rr + 0.075, Math.PI, 0, 0);
-    }
-    addMesh(new THREE.SphereGeometry(0.17, 24, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), m.fur, jaw, 0, 0, 0.06).scale.set(1, 0.55, 1.05);
-    addMesh(new THREE.CircleGeometry(0.15, 20), m.gum, jaw, 0, 0.001, 0.07, -Math.PI / 2, 0, 0);
-    for (let i = 0; i < 12; i++) {
-      const a = (i / 11 - 0.5) * 1.65;
-      addMesh(new THREE.ConeGeometry(0.015, 0.065 + (i % 2) * 0.02, 6), m.bone, jaw, Math.sin(a) * 0.14, 0.025, Math.cos(a) * 0.14 + 0.07);
-    }
-  }
+/* Body-part geometry, rotated so the texture seam faces backwards. */
+const LIMB = (rTop, rBot, len) => new THREE.CylinderGeometry(rTop, rBot, len, 18, 1).rotateY(Math.PI);
+const JOINT = (r) => new THREE.SphereGeometry(r, 16, 12).rotateY(Math.PI);
+function torsoGeometry() {   // hips → waist → chest → sloped shoulders → neck base
+  const pts = [[0.001, -0.02], [0.15, 0.0], [0.155, 0.08], [0.14, 0.2], [0.165, 0.34], [0.19, 0.48], [0.195, 0.56], [0.17, 0.64], [0.11, 0.7], [0.06, 0.73], [0.001, 0.735]]
+    .map(([r, y]) => new THREE.Vector2(r, y));
+  return new THREE.LatheGeometry(pts, 32).rotateY(Math.PI);
+}
 
-  if (id === 'steven') {
-    for (const s of [-1, 1]) {
-      const ear = new THREE.Group(); ear.position.set(s * 0.1, 0.17, -0.02); ear.rotation.z = -s * 0.18; head.add(ear);
-      addMesh(new THREE.CapsuleGeometry(0.045, s > 0 ? 0.12 : 0.3, 6, 12), m.fur, ear, 0, s > 0 ? 0.1 : 0.2, 0).scale.set(1, 1, 0.5);
-      addMesh(new THREE.CapsuleGeometry(0.025, s > 0 ? 0.08 : 0.24, 4, 8), m.furLight, ear, 0, s > 0 ? 0.1 : 0.2, 0.02).scale.set(1, 1, 0.3);
-      if (s > 0) {   // bent, torn ear
-        const tip = new THREE.Group(); tip.position.set(0, 0.2, 0); tip.rotation.z = -1.25; ear.add(tip);
-        addMesh(new THREE.CapsuleGeometry(0.042, 0.15, 6, 12), m.fur, tip, 0, 0.1, 0).scale.set(1, 1, 0.5);
-        addMesh(CYL(0.01, 0.01, 0.06, 6), m.endo, ear, 0, 0.19, 0);
-      }
-    }
-  } else if (id === 'xavier') {
-    for (const s of [-1, 1]) {
-      addMesh(SPH(0.075, 16, 12), m.fur, head, s * 0.17, 0.17, -0.02).scale.set(1, 1, 0.55);
-      addMesh(SPH(0.04, 12, 10), m.socket, head, s * 0.17, 0.17, 0.015).scale.set(1, 1, 0.4);
-    }
-    const hat = M({ color: 0x0c0c0c, rough: 0.6, spec: 0.2 });
-    addMesh(CYL(0.11, 0.115, 0.2, 24), hat, head, 0, 0.34, -0.01);
-    addMesh(CYL(0.18, 0.18, 0.015, 28), hat, head, 0, 0.235, -0.01);
-    addMesh(CYL(0.116, 0.116, 0.04, 24), M({ color: 0x6a0f0f, rough: 0.6 }), head, 0, 0.265, -0.01);
-  } else {
-    for (let i = 0; i < 6; i++) {
-      addMesh(new THREE.ConeGeometry(0.03, 0.14 + (i % 2) * 0.06, 8), m.endo, head, 0, 0.2 + Math.sin(i / 5 * Math.PI) * 0.03, 0.12 - i * 0.05, -0.4 + i * 0.15, 0, 0);
-    }
-    if (!faceTex) addMesh(SPH(0.04, 12, 10), m.furLight, head, -0.06, -0.085, 0.24);   // the snus bulge
+function buildHuman(id, T, faceTex) {
+  const H = HUMANS[id], g = new THREE.Group(); g.userData.id = id;
+  const skin = M({ map: T.skin[id].map, bump: T.skin[id].bump, bumpScale: 0.8, rough: 0.85, spec: 0.08 });
+  const top = M({ map: T.top[id].map, bump: T.top[id].bump, bumpScale: 1, rough: 0.85, spec: 0.1 });
+  const pants = M({ map: T.pants.map, bump: T.pants.bump, bumpScale: 1, rough: 0.9 });
+  const shoe = M({ color: 0x121010, rough: 0.4, spec: 0.5 });
+  const blood = M({ color: 0x7a0000, rough: 0.2, spec: 0.9 });            // wet, glossy blood
+  const hair = M({ color: H.hair, rough: 0.95, spec: 0.05 });
+  const sleeve = H.sleeves ? top : skin;
+
+  // legs
+  const hips = new THREE.Group(); hips.position.y = 0.92; g.add(hips);
+  addMesh(JOINT(0.17), pants, hips, 0, -0.02, 0).scale.set(1.25, 0.7, 0.8);
+  for (const s of [-1, 1]) {
+    const leg = new THREE.Group(); leg.position.set(s * 0.11, 0, 0); hips.add(leg);
+    addMesh(LIMB(0.095, 0.068, 0.44), pants, leg, 0, -0.22, 0);
+    addMesh(JOINT(0.068), pants, leg, 0, -0.44, 0);
+    addMesh(LIMB(0.068, 0.048, 0.42), pants, leg, 0, -0.65, 0);
+    addMesh(BOX(0.11, 0.08, 0.27), shoe, leg, 0, -0.88, 0.05);
   }
+  // torso
+  const torso = new THREE.Group(); torso.position.y = 0.92; g.add(torso);
+  const rz = 0.19 * 0.72;
+  addMesh(torsoGeometry(), top, torso, 0, 0.02, 0).scale.set(1.3, 1, 0.72);
+  if (H.tie) {   // school shirt collar + tie under the blazer
+    addMesh(BOX(0.13, 0.06, 0.02), M({ color: 0xb8b0a4, rough: 0.8 }), torso, 0, 0.68, rz - 0.01);
+    addMesh(BOX(0.05, 0.32, 0.012), M({ color: 0x5a0c16, rough: 0.6 }), torso, 0, 0.52, rz + 0.004);
+  }
+  addMesh(LIMB(0.06, 0.07, 0.16), skin, torso, 0, 0.78, 0);    // neck
+
+  // head: hair-coloured skull behind the pasted face photo
+  const head = new THREE.Group(); head.position.set(0, 0.93, 0); torso.add(head);
+  addMesh(SPH(0.19, 28, 22), hair, head).scale.set(1, 1.12, 1);
+  for (const s of [-1, 1]) addMesh(SPH(0.04, 10, 8), skin, head, s * 0.19, -0.02, 0).scale.set(0.5, 1, 0.8);
+  if (faceTex) {
+    const plate = addMesh(new THREE.PlaneGeometry(0.5, 0.5), faceMaterial(faceTex), head, 0, -0.01, 0.2);
+    plate.castShadow = false; head.userData.facePlate = plate;
+  } else {      // fallback face: hollow eyes and a bloody mouth
+    addMesh(SPH(0.17, 24, 16), skin, head, 0, -0.02, 0.05).scale.set(1, 1.1, 0.9);
+    for (const s of [-1, 1]) addMesh(SPH(0.032, 12, 10), M({ color: 0x050303 }), head, s * 0.06, 0.02, 0.19);
+    addMesh(SPH(0.045, 12, 10), blood, head, 0, -0.1, 0.18).scale.set(1.4, 0.5, 0.5);
+  }
+  const jaw = new THREE.Group(); head.add(jaw);
+
+  // arms with bloody, dripping hands
+  const arms = [];
+  for (const s of [-1, 1]) {
+    const sh = new THREE.Group(); sh.position.set(s * 0.27, 0.6, 0); torso.add(sh);
+    addMesh(JOINT(0.075), sleeve, sh).scale.set(1.1, 1, 1);
+    addMesh(LIMB(0.068, 0.05, 0.34), sleeve, sh, 0, -0.17, 0);
+    const el = new THREE.Group(); el.position.set(0, -0.34, 0); sh.add(el);
+    addMesh(JOINT(0.05), sleeve, el);
+    addMesh(LIMB(0.05, 0.038, 0.3), sleeve, el, 0, -0.15, 0);
+    const hand = new THREE.Group(); hand.position.set(0, -0.34, 0); el.add(hand);
+    addMesh(BOX(0.085, 0.1, 0.04), skin, hand, 0, -0.03, 0);
+    for (let f = 0; f < 4; f++) addMesh(new THREE.CapsuleGeometry(0.009, 0.055, 4, 6), skin, hand, (f - 1.5) * 0.019, -0.11, 0.004, 0.1, 0, 0);
+    addMesh(new THREE.CapsuleGeometry(0.01, 0.04, 4, 6), skin, hand, s * -0.045, -0.04, 0.012, 0, 0, s * 0.6);
+    addMesh(SPH(0.03, 10, 8), blood, hand, 0, -0.06, 0.02).scale.set(1.3, 1.2, 0.6);         // blood-soaked palm
+    for (let d = 0; d < 2; d++) addMesh(SPH(0.008, 6, 6), blood, hand, (d - 0.5) * 0.03, -0.17 - d * 0.03, 0).scale.set(1, 2.6, 1);   // drips
+    arms.push({ sh, el, s });
+  }
+  // pool of blood at the feet
+  const pool = addMesh(new THREE.CircleGeometry(0.42, 28), blood, g, 0.05, 0.007, 0.08, -Math.PI / 2, 0, 0.4);
+  pool.scale.set(1, 0.7, 1); pool.castShadow = false;
+
+  g.userData.rig = { torso, head, arms, jaw };
+  g.userData.facePlate = head.userData.facePlate || null;
+  g.traverse((o) => { if (o.isMesh) o.userData.actor = id; });
+  return g;
 }
 
 function pose(g, name, jaw = 0) {
@@ -1181,33 +1189,6 @@ function pose(g, name, jaw = 0) {
     case 'crouch': r.torso.rotation.x = 0.35; r.head.rotation.set(-0.2, 0, 0.3); break;
   }
   r.jaw.rotation.x = jaw * 0.8;
-}
-
-function buildMini(T, faceTex) {
-  const g = new THREE.Group();
-  const fur = M({ map: T.fur.xavier.map, bump: T.fur.xavier.bump, bumpScale: 2, rough: 0.95, spec: 0.05 });
-  const lite = M({ map: T.belly.xavier.map, rough: 0.95 });
-  const hat = M({ color: 0x0c0c0c, rough: 0.6 });
-  const eye = M({ color: VILLAINS.xavier.eye, emissive: 1 });
-  addMesh(SPH(0.12, 18, 14), fur, g, 0, 0.12, 0).scale.set(1, 1.05, 0.9);
-  addMesh(SPH(0.07, 14, 10), lite, g, 0, 0.11, 0.07).scale.set(1, 1.1, 0.5);
-  for (const s of [-1, 1]) {
-    addMesh(new THREE.CapsuleGeometry(0.035, 0.08, 4, 8), fur, g, s * 0.13, 0.12, 0.03, 0, 0, s * 0.6);
-    addMesh(new THREE.CapsuleGeometry(0.04, 0.06, 4, 8), fur, g, s * 0.06, 0.03, 0.12, Math.PI / 2, 0, 0);
-    addMesh(SPH(0.035, 10, 8), fur, g, s * 0.085, 0.43, -0.01);
-  }
-  addMesh(SPH(0.11, 20, 16), fur, g, 0, 0.33, 0);
-  if (faceTex) {
-    addMesh(new THREE.PlaneGeometry(0.24, 0.24), faceMaterial(faceTex), g, 0, 0.33, 0.115).castShadow = false;
-  } else {
-    addMesh(SPH(0.055, 14, 10), lite, g, 0, 0.3, 0.08).scale.set(1.2, 0.8, 0.8);
-    for (const s of [-1, 1]) addMesh(SPH(0.014, 8, 6), eye, g, s * 0.04, 0.35, 0.095);
-  }
-  if (!faceTex) for (let i = 0; i < 6; i++) addMesh(new THREE.ConeGeometry(0.007, 0.022, 5), M({ color: 0xd8cfb0 }), g, -0.03 + i * 0.012, 0.27, 0.1, Math.PI, 0, 0);
-  addMesh(CYL(0.05, 0.05, 0.08, 16), hat, g, 0, 0.47, 0);
-  addMesh(CYL(0.08, 0.08, 0.008, 18), hat, g, 0, 0.43, 0);
-  g.traverse((o) => { if (o.isMesh) o.userData.actor = 'mini'; });
-  return g;
 }
 
 /* ==========================================================================
@@ -1325,7 +1306,7 @@ const Baker = {
     for (let i = 0; i < frames; i++) {
       const t = i / (frames - 1), e = t * t;
       const dist = lerp(d0, d1, e);
-      const headH = 2.02 * actor.scale.y;
+      const headH = 1.85 * actor.scale.y;
       actor.position.copy(base).addScaledVector(fwd, dist + 0.25);
       actor.position.y = base.y - headH + 0.06 + Math.sin(i * 2.1) * 0.03;
       actor.lookAt(base.x, actor.position.y, base.z);
@@ -1767,7 +1748,6 @@ const Sound = {
   },
   click() { this.tone({ type: 'square', freq: 2400, dur: 0.012, vol: 0.07 }); this.tone({ type: 'square', freq: 900, dur: 0.015, vol: 0.05, when: 0.012 }); },
   run() { this.burst({ type: 'bandpass', freq: 500, q: 0.6, dur: 0.3, vol: 0.16, attack: 0.08 }); this.footstep(null, 'room', 0.12); this.footstep(null, 'room', 0.1, 0.16); },
-  heartbeat(vol = 0.3) { this.tone({ freq: 58, freqEnd: 40, dur: 0.14, vol }); this.tone({ freq: 52, freqEnd: 38, dur: 0.14, vol: vol * 0.7, when: 0.2 }); },
   screech(pos, ch, vol = 0.25) { this.tone({ type: 'sawtooth', freq: 900, freqEnd: 300, dur: 0.35, vol, pos, ch }); },
   glitch() { this.burst({ type: 'bandpass', freq: 3000, q: 0.4, dur: 0.12, vol: 0.35 }); this.tone({ type: 'square', freq: 120, freqEnd: 2400, dur: 0.12, vol: 0.15 }); },
   tick() { this.tone({ freq: 1400, dur: 0.05, vol: 0.06 }); },
@@ -2014,8 +1994,8 @@ const G = {
   state: 'loading', night: 1, time: 0, hour: 0, t: 0,
   view: 'center', trans: null, battery: 100, flashOn: false, wantPrev: false,
   doors: { left: 0, right: 0, locker: 0 },
-  shake: 0, flicker: 0, halluc: 0, heartT: 0, listen: 0, listened: false,
-  ai: null, js: null, showHints: true, subtitles: true, introT: 0,
+  shake: 0, flicker: 0, halluc: 0, listen: 0, listened: false,
+  ai: null, js: null, showHints: true, introT: 0,
 };
 const VIEW_DOOR = { left: 'door_left', right: 'door_right', locker: 'locker' };
 
@@ -2032,7 +2012,7 @@ function setView(v) {
 function startNight(n) {
   const cfg = NIGHTS[n - 1];
   Object.assign(G, { night: n, time: 0, hour: 0, trans: null, battery: 100, flashOn: false,
-    doors: { left: 0, right: 0, locker: 0 }, shake: 0, flicker: 0, halluc: 0, heartT: 0, listen: 0, listened: false, js: null });
+    doors: { left: 0, right: 0, locker: 0 }, shake: 0, flicker: 0, halluc: 0, listen: 0, listened: false, js: null });
   G.ai = {
     steven: new HallStalker('steven', 'left', cfg.steven, { interval: 5.2, patience: 11, hold: 2.6, skip: 0 }),
     xavier: new HallStalker('xavier', 'right', cfg.xavier, { interval: 4.2, patience: 8.5, hold: 3.2, skip: 0.25 }),
@@ -2169,15 +2149,6 @@ function updatePlaying(dt) {
   updateHUD();
 }
 
-function dangerLevel() {
-  const a = G.ai;
-  let d = 0;
-  if (a.steven.stage === 3 || a.xavier.stage === 3) d = 0.8;
-  if (a.zynovan.stage === 4 || a.minis.nightmare >= 0) d = 1;
-  else if (a.zynovan.stage === 3) d = Math.max(d, 0.4);
-  else if (a.minis.count === 2) d = Math.max(d, 0.35);
-  return d;
-}
 function updateAudioMix(dt) {
   if (!Sound.ctx) return;
   Sound.setLoop('drone', G.view === 'center' ? 0.2 : 0.06, 0.3);   // the room goes quiet when you listen
@@ -2185,8 +2156,6 @@ function updateAudioMix(dt) {
   Sound.setLoop('steven', G.ai.steven.cueVolume() * (0.12 + shape), 0.05, 380 + 260 * shape);
   const syl = (Math.sin(G.t * 9.3) + Math.sin(G.t * 13.7)) > 0.5 ? 1 : 0.2;
   Sound.setLoop('xavier', G.ai.xavier.cueVolume() * syl, 0.03, 2400 + Math.sin(G.t * 5) * 900);
-  const d = dangerLevel();
-  if (d > 0.3) { G.heartT -= dt; if (G.heartT <= 0) { G.heartT = 1.05 - 0.5 * d; Sound.heartbeat(0.16 + 0.2 * d); } }
 }
 
 /* --- per-frame graphics state --- */
@@ -2301,7 +2270,6 @@ window.addEventListener('keydown', (e) => {
     if (dir === 'back' && G.view === 'center') dir = 'desks';
     if (dir) go(dir);
     if (e.code === 'KeyH') { G.showHints = !G.showHints; updateHUD(true); }
-    if (e.code === 'KeyT') { G.subtitles = !G.subtitles; addAlert(G.subtitles ? 'Subtitles ON' : 'Subtitles OFF — trust your ears.', 'good', true); }
   }
   if (e.code === 'KeyM') Sound.toggleMute();
   if (e.code === 'Escape') { if (G.state === 'playing') pauseGame(); else if (G.state === 'paused') resumeGame(); }
@@ -2342,8 +2310,10 @@ function updateHUD(force) {
   $('#hint').innerHTML = G.showHints ? hints[v] + ' · <kbd>H</kbd> hide' : '';
 }
 
+/* On-screen text is only used for explicit system messages — monster cues are
+ * sound-only (no subtitles, no warnings). */
 function addAlert(text, cls = 'sound', force = false) {
-  if (!text || (!G.subtitles && !force)) return;
+  if (!text || !force) return;
   const box = $('#alerts'), el = document.createElement('div');
   el.className = 'alert ' + cls; el.textContent = text;
   box.appendChild(el);
@@ -2443,10 +2413,13 @@ async function prerender(setStatus) {
   for (const id of Object.keys(altFaces)) if (!faces[id]) { faces[id] = altFaces[id]; delete altFaces[id]; }
   const actors = {};
   for (const id of ['xavier', 'steven', 'zynovan']) {
-    actors[id] = buildAnimatronic(id, T, faces[id] && faces[id].map, faces[id] && faces[id].bump);
+    actors[id] = buildHuman(id, T, faces[id] && faces[id].map);
     actors[id].visible = false; Baker.scene.add(actors[id]);
   }
-  const minis = [1, 2, 3].map(() => { const m = buildMini(T, faces.xavier && faces.xavier.map); m.visible = false; Baker.scene.add(m); return m; });
+  const minis = [1, 2, 3].map(() => {   // Little Xaviers: knee-high copies of him standing on the desks
+    const m = buildHuman('xavier', T, faces.xavier && faces.xavier.map);
+    m.scale.setScalar(0.26); pose(m, 'stand'); m.visible = false; Baker.scene.add(m); return m;
+  });
   const camPos = (v) => new THREE.Vector3(...WORLD.cams[v].pos);
   const place = (a, x, y, z, view, poseName, jaw = 0, scale = 1, faceOffset = 0) => {
     a.visible = true; a.scale.setScalar(scale); a.position.set(x, y, z);
