@@ -1088,14 +1088,21 @@ function buildAnimatronic(id, T, faceTex, faceBump) {
   return g;
 }
 
+/* A pasted-on photo: unlit (full colour in the bake) and emissive, so it stays
+ * clear and bright even outside the flashlight beam. */
+function faceMaterial(tex) {
+  const m = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide });
+  m.userData.emissive = 0.45; m.userData.spec = 0;
+  return m;
+}
+
 function buildHead(head, id, m, T, faceTex, faceBump) {
   addMesh(SPH(0.24, 32, 24), m.fur, head).scale.set(1, 0.95, 0.95);
   let mouthY = -0.12;
   if (faceTex) {
     // The photo IS the face: it covers the whole front of the skull (no 3D eyes,
     // snout, jaw or teeth), and is shaded/lit together with the 3D body.
-    const faceM = M({ map: faceTex, bump: faceBump, bumpScale: 0.8, rough: 0.95, spec: 0.04, transparent: true });
-    addMesh(new THREE.SphereGeometry(0.249, 48, 32, Math.PI / 2 - 1.0, 2.0, 0.3, 1.97), faceM, head);
+    addMesh(new THREE.PlaneGeometry(0.5, 0.5), faceMaterial(faceTex), head, 0, -0.01, 0.245).castShadow = false;
   } else {
     addMesh(SPH(0.14, 24, 16), m.furLight, head, 0, -0.07, 0.17).scale.set(1.15, 0.75, 0.8);
     addMesh(SPH(0.035, 12, 10), M({ color: id === 'steven' ? 0x9a2040 : 0x140a05, rough: 0.3, spec: 0.6 }), head, 0, -0.02, 0.285).scale.set(1.3, 0.8, 0.8);
@@ -1188,7 +1195,7 @@ function buildMini(T, faceTex) {
   }
   addMesh(SPH(0.11, 20, 16), fur, g, 0, 0.33, 0);
   if (faceTex) {
-    addMesh(new THREE.SphereGeometry(0.113, 32, 20, Math.PI / 2 - 1.0, 2.0, 0.3, 1.97), M({ map: faceTex, transparent: true, rough: 0.6 }), g, 0, 0.33, 0);
+    addMesh(new THREE.PlaneGeometry(0.24, 0.24), faceMaterial(faceTex), g, 0, 0.33, 0.115).castShadow = false;
   } else {
     addMesh(SPH(0.055, 14, 10), lite, g, 0, 0.3, 0.08).scale.set(1.2, 0.8, 0.8);
     for (const s of [-1, 1]) addMesh(SPH(0.014, 8, 6), eye, g, s * 0.04, 0.35, 0.095);
@@ -2418,7 +2425,12 @@ async function prerender(setStatus) {
     const img = Assets.img(`${id}/face`);
     if (!img) continue;
     try {
-      const c = gradePhoto(img, { w: 512, h: 512, feather: 0.82, vignette: 0, contrast: 1.25, crush: 0.25, lift: 1.5 });
+      const c = coverCanvas(img, 512, 512), x = c.getContext('2d');
+      x.globalCompositeOperation = 'destination-in';
+      x.save(); x.translate(256, 256); x.scale(250, 250);
+      const f = x.createRadialGradient(0, 0, 0, 0, 0, 1);
+      f.addColorStop(0, '#000'); f.addColorStop(0.95, '#000'); f.addColorStop(1, 'rgba(0,0,0,0)');
+      x.fillStyle = f; x.beginPath(); x.arc(0, 0, 1, 0, Math.PI * 2); x.fill(); x.restore();
       const map = new THREE.CanvasTexture(c); map.colorSpace = THREE.SRGBColorSpace;
       faces[id] = { map, bump: new THREE.CanvasTexture(c) };
     } catch (e) { console.warn('face skipped', e); }
