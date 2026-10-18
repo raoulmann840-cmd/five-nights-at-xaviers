@@ -1,0 +1,22 @@
+# Netlify: pure static site — no build step, publish the repository root.
+[build]
+  publish = "."
+  command = "echo 'Static site - no build needed'"
+
+# Photos/sounds get swapped often; keep their cache short.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=300, must-revalidate"
+
+# Vendored engines never change for a given filename.
+[[headers]]
+  for = "/lib/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

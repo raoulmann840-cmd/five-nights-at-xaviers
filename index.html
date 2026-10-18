@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Five Nights at Xavier's</title>
+  <meta name="description" content="Five Nights at Xavier's — a FNAF 4-style classroom survival horror parody. Help Raoul Mann survive until 6 AM.">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23000'/%3E%3Ccircle cx='22' cy='30' r='7' fill='%23ff2a1a'/%3E%3Ccircle cx='42' cy='30' r='7' fill='%23ff2a1a'/%3E%3C/svg%3E">
+
+  <!-- Fonts are optional: the game falls back to system fonts offline. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Special+Elite&family=VT323&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- PixiJS mounts its WebGL canvas here (fills the window). -->
+  <div id="pixi-host"></div>
+
+  <!-- The UI layer is resized by script.js to sit exactly on the 16:9 game area. -->
+  <div id="ui">
+    <!-- ================= IN-GAME HUD ================= -->
+    <div id="hud" class="hidden">
+      <div id="hud-top">
+        <div id="hud-night">Night 1</div>
+        <div id="hud-clock">12 <span>AM</span></div>
+      </div>
+      <div id="hud-battery">
+        <span class="label">FLASHLIGHT</span>
+        <div class="bar"><div class="fill"></div></div>
+        <span class="pct">100%</span>
+      </div>
+      <div id="listen-meter" class="hidden"><span>LISTENING</span><i></i><i></i><i></i></div>
+      <div id="alerts" aria-live="polite"></div>
+      <div id="hint"></div>
+
+      <button class="nav" id="nav-left"   data-go="left"   title="Classroom door (A)">&#9664;<span>HALL DOOR</span></button>
+      <button class="nav" id="nav-right"  data-go="right"  title="Storage door (D)"><span>STORAGE DOOR</span>&#9654;</button>
+      <button class="nav" id="nav-locker" data-go="locker" title="Supply locker (W)">&#9650;<span>SUPPLY LOCKER</span></button>
+      <button class="nav" id="nav-desks"  data-go="desks"  title="Turn around (S)"><span>TURN AROUND</span>&#9660;</button>
+      <button class="nav" id="nav-back"   data-go="back"   title="Back (S)"><span>BACK</span>&#9660;</button>
+      <button id="hold-btn">HOLD<br>TO CLOSE</button>
+      <button id="flash-btn">LIGHT</button>
+    </div>
+
+    <!-- ================= SCREENS ================= -->
+    <section id="screen-loading" class="screen">
+      <div class="loading-box">
+        <h2 class="glitch" data-text="PRE-RENDERING">PRE-RENDERING</h2>
+        <div class="progress"><div class="progress-fill"></div></div>
+        <p class="loading-status">Starting…</p>
+        <button id="enter-btn" class="btn hidden">CLICK TO ENTER</button>
+        <p class="small dim">Headphones strongly recommended. Listening is how you survive.</p>
+      </div>
+    </section>
+
+    <section id="screen-menu" class="screen hidden">
+      <div class="menu-left">
+        <h1 class="title">Five Nights<br>at <span>Xavier's</span></h1>
+        <p class="tagline">Raoul Mann stayed after class. Big mistake.</p>
+        <nav class="menu-buttons">
+          <button class="btn" data-action="new">New Game</button>
+          <div class="night-row" id="night-row"></div>
+          <button class="btn" data-action="howto">How to Play</button>
+          <button class="btn" data-action="guide">Asset Guide</button>
+        </nav>
+        <p class="menu-footer">A fan-made parody of <em>Five Nights at Freddy's 4</em>. Not affiliated with Scott Cawthon.</p>
+      </div>
+    </section>
+
+    <section id="screen-howto" class="screen panel-screen hidden">
+      <div class="panel scroll">
+        <h2>How to Play</h2>
+        <p>You are <b>Raoul Mann</b>, locked in Classroom 13 overnight. Survive from <b>12 AM to 6 AM</b>.</p>
+        <table class="keys">
+          <tr><td><kbd>A</kbd> / <kbd>&larr;</kbd></td><td>Run to the <b>Hall Door</b> (classroom door to the hallway)</td></tr>
+          <tr><td><kbd>D</kbd> / <kbd>&rarr;</kbd></td><td>Run to the <b>Storage Door</b> (dark storage closet)</td></tr>
+          <tr><td><kbd>W</kbd> / <kbd>&uarr;</kbd></td><td>Check the <b>Supply Locker</b></td></tr>
+          <tr><td><kbd>S</kbd> / <kbd>&darr;</kbd></td><td><b>Turn around</b> to the desks &amp; teacher's podium &middot; or go <b>back</b></td></tr>
+          <tr><td>Hold <kbd>Mouse</kbd> / <kbd>F</kbd> / <kbd>Shift</kbd></td><td>Flashlight beam (aim with the mouse). Battery is limited.</td></tr>
+          <tr><td>Hold <kbd>Space</kbd> / <kbd>Right-click</kbd></td><td>Hold a door or the locker shut</td></tr>
+          <tr><td><kbd>Esc</kbd> &middot; <kbd>H</kbd> &middot; <kbd>T</kbd> &middot; <kbd>M</kbd></td><td>Pause &middot; hints &middot; subtitles (off = hardcore) &middot; mute</td></tr>
+        </table>
+        <h3>The Three</h3>
+        <ul class="villain-list">
+          <li><b class="c-steven">Steven Pivac</b> — the <b>hallway</b>. Footsteps echo down the corridor. Far away? Hit him with the beam and he backs off. <b>Breathing right outside the door?</b> Light OFF — hold the door until he walks away.</li>
+          <li><b class="c-xavier">Xavier</b> — the <b>storage closet</b>. Boxes shift; he <i>whispers</i>. Same rules, less patience. He also sends <b>Little Xaviers</b> onto the desks behind you — turn around and flash them away before three gather, or he rises behind the podium.</li>
+          <li><b class="c-zynovan">Zynovan Snusvac</b> — the <b>supply locker</b>. Listen for metal creaks, the latch clicking, a snus tin rattling. Check it and hold it shut. Fully out? Hold it until the banging stops.</li>
+        </ul>
+        <p class="dim">Stand at a door with the light OFF to <b>listen</b>. Audio is 3D (HRTF) — wear headphones.</p>
+        <button class="btn back" data-action="menu">&larr; Back</button>
+      </div>
+    </section>
+
+    <section id="screen-guide" class="screen panel-screen hidden">
+      <div class="panel scroll">
+        <h2>Asset Guide</h2>
+        <p>Everything you see is <b>pre-rendered in 3D</b> by the game at load time (Three.js, real shadows, procedural textures) and then lit live by a per-pixel flashlight shader (PixiJS). Your own files plug into that pipeline:</p>
+        <ul>
+          <li><b>Faces</b> (<code>face.png</code>) are wrapped onto the animatronic's 3D skull, shaded and shadowed with the body, and lit by your flashlight.</li>
+          <li><b>Sprites/backgrounds</b> are color-graded and given generated normal maps so the beam rakes across them.</li>
+        </ul>
+        <ol>
+          <li>In your GitHub repo, open the folder (e.g. <code>assets/villains/xavier/</code>).</li>
+          <li><b>Add file &rarr; Upload files</b>, drag the image in, rename it exactly as listed below.</li>
+          <li>Commit. Netlify redeploys automatically — refresh the game.</li>
+        </ol>
+        <pre class="tree">assets/
+├── player/raoul.png              ← Raoul Mann headshot (menu &amp; 6 AM)
+├── villains/
+│   ├── xavier/   face.png  hallway_far.png  hallway_near.png  podium.png
+│   │             jumpscare_stage_1.png … jumpscare_stage_12.png
+│   ├── steven/   face.png  hallway_far.png  hallway_near.png
+│   │             jumpscare_stage_1.png …
+│   └── zynovan/  face.png  locker_stage_1.png … locker_stage_4.png
+│                 jumpscare_stage_1.png …
+├── classroom/    center.png  door_left.png  door_right.png  locker.png  desks.png
+│                 (+ optional  &lt;name&gt;_normal.png  &lt;name&gt;_depth.png)
+│                 door_left_closed.png  door_right_closed.png  locker_closed.png
+└── audio/        scream.wav (included)  breathing  whisper  footstep
+                  locker_creak  locker_bang  giggle  ambience  bell  (.wav/.mp3/.ogg)</pre>
+        <p><b>Tips:</b> <code>face.png</code> = front-facing headshot, face centred, eyes about 40% from the top. Jumpscare frames play in order (stage 1 = far, last = face in your face). Classroom backgrounds should be 16:9 renders from your own 3D software for a true FNAF look; the game scales everything to the player's screen.</p>
+        <h3>Currently detected</h3>
+        <div id="asset-status" class="asset-status"></div>
+        <button class="btn back" data-action="menu">&larr; Back</button>
+      </div>
+    </section>
+
+    <section id="screen-intro" class="screen hidden">
+      <div class="intro">
+        <div class="intro-time">12:00 AM</div>
+        <div class="intro-night">Night 1</div>
+        <p class="intro-msg"></p>
+        <p class="intro-tip"></p>
+        <p class="small dim blink">click to begin</p>
+      </div>
+    </section>
+
+    <section id="screen-pause" class="screen panel-screen hidden">
+      <div class="panel narrow">
+        <h2>Paused</h2>
+        <button class="btn" data-action="resume">Resume</button>
+        <button class="btn" data-action="restart">Restart Night</button>
+        <button class="btn" data-action="quit">Quit to Menu</button>
+      </div>
+    </section>
+
+    <section id="screen-gameover" class="screen hidden">
+      <div class="gameover">
+        <h2 class="glitch" data-text="GAME OVER">GAME OVER</h2>
+        <p id="go-who"></p>
+        <p id="go-quote"></p>
+        <div class="row">
+          <button class="btn" data-action="restart">Try Again</button>
+          <button class="btn" data-action="quit">Main Menu</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-win" class="screen hidden">
+      <div class="win">
+        <div class="win-clock"><span class="roll"><span>5</span><span>6</span></span> AM</div>
+        <p id="win-msg"></p>
+        <canvas id="win-portrait" width="200" height="200"></canvas>
+        <div class="row">
+          <button class="btn" data-action="next" id="next-btn">Next Night</button>
+          <button class="btn" data-action="quit">Main Menu</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-error" class="screen hidden">
+      <div class="panel narrow"><h2>WebGL needed</h2><p id="error-msg">This game needs a browser with WebGL enabled.</p></div>
+    </section>
+  </div>
+
+  <div id="rotate-hint">Rotate your device to landscape &#8635;</div>
+
+  <!-- Vendored engines (no CDN needed): PixiJS 7 = 2D WebGL engine + shaders,
+       Three.js r160 = offline 3D pre-renderer for backgrounds, props and villains. -->
+  <script src="lib/pixi-7.4.2.min.js"></script>
+  <script src="lib/three-0.160.0.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
