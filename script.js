@@ -1092,11 +1092,10 @@ function buildHead(head, id, m, T, faceTex, faceBump) {
   addMesh(SPH(0.24, 32, 24), m.fur, head).scale.set(1, 0.95, 0.95);
   let mouthY = -0.12;
   if (faceTex) {
-    // The photo is wrapped on a sphere segment over the front of the skull, so it
-    // is shaded, shadowed and normal-mapped together with the 3D body.
-    const faceM = M({ map: faceTex, bump: faceBump, bumpScale: 1.2, rough: 0.55, spec: 0.3, transparent: true });
-    addMesh(new THREE.SphereGeometry(0.249, 48, 32, Math.PI / 2 - 0.88, 1.76, 0.36, 1.56), faceM, head);
-    mouthY = -0.1;
+    // The photo IS the face: it covers the whole front of the skull (no 3D eyes,
+    // snout, jaw or teeth), and is shaded/lit together with the 3D body.
+    const faceM = M({ map: faceTex, bump: faceBump, bumpScale: 0.8, rough: 0.95, spec: 0.04, transparent: true });
+    addMesh(new THREE.SphereGeometry(0.249, 48, 32, Math.PI / 2 - 1.0, 2.0, 0.3, 1.97), faceM, head);
   } else {
     addMesh(SPH(0.14, 24, 16), m.furLight, head, 0, -0.07, 0.17).scale.set(1.15, 0.75, 0.8);
     addMesh(SPH(0.035, 12, 10), M({ color: id === 'steven' ? 0x9a2040 : 0x140a05, rough: 0.3, spec: 0.6 }), head, 0, -0.02, 0.285).scale.set(1.3, 0.8, 0.8);
@@ -1106,18 +1105,20 @@ function buildHead(head, id, m, T, faceTex, faceBump) {
       addMesh(BOX(0.11, 0.025, 0.035), m.fur, head, s * 0.09, 0.13, 0.2, 0, 0, s * 0.38);
     }
   }
-  for (let row = 0; row < 2; row++) for (let i = 0; i < 13; i++) {
-    const a = (i / 12 - 0.5) * 1.75, rr = 0.155 - row * 0.03;
-    addMesh(new THREE.ConeGeometry(0.016 - row * 0.004, 0.07 + (i % 3) * 0.018 - row * 0.02, 6), m.bone, head, Math.sin(a) * rr, mouthY, Math.cos(a) * rr + 0.075, Math.PI, 0, 0);
-  }
   const jaw = new THREE.Group(); jaw.position.set(0, mouthY + 0.01, 0); head.add(jaw);
-  addMesh(new THREE.SphereGeometry(0.17, 24, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), m.fur, jaw, 0, 0, 0.06).scale.set(1, 0.55, 1.05);
-  addMesh(new THREE.CircleGeometry(0.15, 20), m.gum, jaw, 0, 0.001, 0.07, -Math.PI / 2, 0, 0);
-  for (let i = 0; i < 12; i++) {
-    const a = (i / 11 - 0.5) * 1.65;
-    addMesh(new THREE.ConeGeometry(0.015, 0.065 + (i % 2) * 0.02, 6), m.bone, jaw, Math.sin(a) * 0.14, 0.025, Math.cos(a) * 0.14 + 0.07);
+  head.userData.jaw = jaw;     // empty when a face photo is used (poses still animate it)
+  if (!faceTex) {
+    for (let row = 0; row < 2; row++) for (let i = 0; i < 13; i++) {
+      const a = (i / 12 - 0.5) * 1.75, rr = 0.155 - row * 0.03;
+      addMesh(new THREE.ConeGeometry(0.016 - row * 0.004, 0.07 + (i % 3) * 0.018 - row * 0.02, 6), m.bone, head, Math.sin(a) * rr, mouthY, Math.cos(a) * rr + 0.075, Math.PI, 0, 0);
+    }
+    addMesh(new THREE.SphereGeometry(0.17, 24, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), m.fur, jaw, 0, 0, 0.06).scale.set(1, 0.55, 1.05);
+    addMesh(new THREE.CircleGeometry(0.15, 20), m.gum, jaw, 0, 0.001, 0.07, -Math.PI / 2, 0, 0);
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 11 - 0.5) * 1.65;
+      addMesh(new THREE.ConeGeometry(0.015, 0.065 + (i % 2) * 0.02, 6), m.bone, jaw, Math.sin(a) * 0.14, 0.025, Math.cos(a) * 0.14 + 0.07);
+    }
   }
-  head.userData.jaw = jaw;
 
   if (id === 'steven') {
     for (const s of [-1, 1]) {
@@ -1187,12 +1188,12 @@ function buildMini(T, faceTex) {
   }
   addMesh(SPH(0.11, 20, 16), fur, g, 0, 0.33, 0);
   if (faceTex) {
-    addMesh(new THREE.SphereGeometry(0.113, 32, 20, Math.PI / 2 - 0.8, 1.6, 0.45, 1.35), M({ map: faceTex, transparent: true, rough: 0.6 }), g, 0, 0.33, 0);
+    addMesh(new THREE.SphereGeometry(0.113, 32, 20, Math.PI / 2 - 1.0, 2.0, 0.3, 1.97), M({ map: faceTex, transparent: true, rough: 0.6 }), g, 0, 0.33, 0);
   } else {
     addMesh(SPH(0.055, 14, 10), lite, g, 0, 0.3, 0.08).scale.set(1.2, 0.8, 0.8);
     for (const s of [-1, 1]) addMesh(SPH(0.014, 8, 6), eye, g, s * 0.04, 0.35, 0.095);
   }
-  for (let i = 0; i < 6; i++) addMesh(new THREE.ConeGeometry(0.007, 0.022, 5), M({ color: 0xd8cfb0 }), g, -0.03 + i * 0.012, 0.27, 0.1, Math.PI, 0, 0);
+  if (!faceTex) for (let i = 0; i < 6; i++) addMesh(new THREE.ConeGeometry(0.007, 0.022, 5), M({ color: 0xd8cfb0 }), g, -0.03 + i * 0.012, 0.27, 0.1, Math.PI, 0, 0);
   addMesh(CYL(0.05, 0.05, 0.08, 16), hat, g, 0, 0.47, 0);
   addMesh(CYL(0.08, 0.08, 0.008, 18), hat, g, 0, 0.43, 0);
   g.traverse((o) => { if (o.isMesh) o.userData.actor = 'mini'; });
@@ -2417,7 +2418,7 @@ async function prerender(setStatus) {
     const img = Assets.img(`${id}/face`);
     if (!img) continue;
     try {
-      const c = gradePhoto(img, { w: 512, h: 512, feather: 0.72, vignette: 0, contrast: 1.25, crush: 0.25, lift: 1.5 });
+      const c = gradePhoto(img, { w: 512, h: 512, feather: 0.82, vignette: 0, contrast: 1.25, crush: 0.25, lift: 1.5 });
       const map = new THREE.CanvasTexture(c); map.colorSpace = THREE.SRGBColorSpace;
       faces[id] = { map, bump: new THREE.CanvasTexture(c) };
     } catch (e) { console.warn('face skipped', e); }

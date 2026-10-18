@@ -62,7 +62,7 @@ assets/
 - **Jumpscare frames** play in order, from stage 1 (far away) to the last frame (right in your face). If they exist they replace the built-in 3D jumpscare; delete them to get the 3D version back.
 - **`gameover.png`** appears on the game-over screen; **`poster.png`** is hung on the classroom wall as a framed poster.
 
-**Xavier already has real photos in place:** `face.jpg` (the visor-glasses photo, wrapped on his 3D head and on the Little Xaviers), `jumpscare_stage_1–8.jpg` (zoom into the angry glare), `gameover.jpg` and `poster.jpg`.
+**Xavier already has real photos in place:** `face.jpg` (the visor-glasses photo — it replaces his whole face: no 3D teeth, jaw or eyes; the Little Xaviers wear it too), `jumpscare_stage_1–8.jpg` (zoom into the glasses photo), `gameover.jpg` and `poster.jpg`.
 
 **Uploading on GitHub:**
 1. Open the folder, for example `assets/villains/xavier/`.
