@@ -157,7 +157,8 @@ function buildManifest() {
   add('player/raoul', 'assets/player/raoul', 'Raoul Mann — headshot', 'player');
   for (const id of ['xavier', 'steven', 'zynovan']) {
     const n = VILLAINS[id].name;
-    add(`${id}/face`, `assets/villains/${id}/face`, `${n} — face (merged onto 3D head)`, id);
+    add(`${id}/face`, `assets/villains/${id}/face`, `${n} — face (pasted on 3D head)`, id);
+    add(`${id}/face_2`, `assets/villains/${id}/face_2`, `${n} — second face (used for half his appearances)`, id);
     if (id === 'zynovan') {
       for (let s = 1; s <= 4; s++) add(`${id}/locker_stage_${s}`, `assets/villains/${id}/locker_stage_${s}`, `${n} — locker stage ${s}`, id);
     } else {
@@ -1084,6 +1085,7 @@ function buildAnimatronic(id, T, faceTex, faceBump) {
     arms.push({ sh, el, s });
   }
   g.userData.rig = { torso, head, arms, jaw: head.userData.jaw };
+  g.userData.facePlate = head.userData.facePlate || null;
   g.traverse((o) => { if (o.isMesh) o.userData.actor = id; });
   return g;
 }
@@ -1102,7 +1104,8 @@ function buildHead(head, id, m, T, faceTex, faceBump) {
   if (faceTex) {
     // The photo IS the face: it covers the whole front of the skull (no 3D eyes,
     // snout, jaw or teeth), and is shaded/lit together with the 3D body.
-    addMesh(new THREE.PlaneGeometry(0.5, 0.5), faceMaterial(faceTex), head, 0, -0.01, 0.245).castShadow = false;
+    const plate = addMesh(new THREE.PlaneGeometry(0.5, 0.5), faceMaterial(faceTex), head, 0, -0.01, 0.245);
+    plate.castShadow = false; head.userData.facePlate = plate;
   } else {
     addMesh(SPH(0.14, 24, 16), m.furLight, head, 0, -0.07, 0.17).scale.set(1.15, 0.75, 0.8);
     addMesh(SPH(0.035, 12, 10), M({ color: id === 'steven' ? 0x9a2040 : 0x140a05, rough: 0.3, spec: 0.6 }), head, 0, -0.02, 0.285).scale.set(1.3, 0.8, 0.8);
@@ -2420,9 +2423,11 @@ async function prerender(setStatus) {
   Baker.init();
   Baker.scene.add(W.world);
   // face photos → graded textures wrapped on the 3D skulls
-  const faces = {};
-  for (const id of ['xavier', 'steven', 'zynovan']) {
-    const img = Assets.img(`${id}/face`);
+  const faces = {}, altFaces = {};
+  const faceJobs = [];
+  for (const id of ['xavier', 'steven', 'zynovan']) faceJobs.push([id, 'face', faces], [id, 'face_2', altFaces]);
+  for (const [id, slot, into] of faceJobs) {
+    const img = Assets.img(`${id}/${slot}`);
     if (!img) continue;
     try {
       const c = coverCanvas(img, 512, 512), x = c.getContext('2d');
@@ -2432,9 +2437,10 @@ async function prerender(setStatus) {
       f.addColorStop(0, '#000'); f.addColorStop(0.95, '#000'); f.addColorStop(1, 'rgba(0,0,0,0)');
       x.fillStyle = f; x.beginPath(); x.arc(0, 0, 1, 0, Math.PI * 2); x.fill(); x.restore();
       const map = new THREE.CanvasTexture(c); map.colorSpace = THREE.SRGBColorSpace;
-      faces[id] = { map, bump: new THREE.CanvasTexture(c) };
+      into[id] = { map, bump: new THREE.CanvasTexture(c) };
     } catch (e) { console.warn('face skipped', e); }
   }
+  for (const id of Object.keys(altFaces)) if (!faces[id]) { faces[id] = altFaces[id]; delete altFaces[id]; }
   const actors = {};
   for (const id of ['xavier', 'steven', 'zynovan']) {
     actors[id] = buildAnimatronic(id, T, faces[id] && faces[id].map, faces[id] && faces[id].bump);
@@ -2480,6 +2486,8 @@ async function prerender(setStatus) {
   const villain = (view, key, actor, x, z, poseName, jaw, opts = {}) => job(key, () => {
     doorsOpen(); hideActors();
     if (opts.prep) opts.prep();
+    const id = actor.userData.id, plate = actor.userData.facePlate;
+    if (plate) plate.material.map = (opts.face === 2 && altFaces[id] ? altFaces[id] : faces[id]).map;
     place(actor, x, opts.y || 0, z, view, poseName, jaw, opts.scale || 1, opts.turn || 0);
     let L = Baker.bake(view, { subjects: [actor], catcherAt: opts.catcher ? [x, z] : null });
     const ov = opts.override && Assets.img(opts.override);
@@ -2495,8 +2503,8 @@ async function prerender(setStatus) {
   const lockerOcc = () => { W.locker.doors.forEach((d) => { d.visible = false; }); };
   villain('locker', 'zyn_1', actors.zynovan, 0, -4.75, 'crouch', 0, { y: -0.18, scale: 0.92, override: 'zynovan/locker_stage_1', depth: 1.7, prep: lockerOcc });
   villain('locker', 'zyn_2', actors.zynovan, 0.05, -4.68, 'peek', 0.3, { y: -0.08, scale: 0.94, override: 'zynovan/locker_stage_2', depth: 1.6, prep: lockerOcc });
-  villain('locker', 'zyn_3', actors.zynovan, 0, -4.45, 'lean', 0.45, { scale: 0.96, override: 'zynovan/locker_stage_3', depth: 1.4, prep: lockerOcc });
-  villain('locker', 'zyn_4', actors.zynovan, 0, -4.25, 'reach', 0.85, { scale: 1.0, override: 'zynovan/locker_stage_4', depth: 0.9, prep: lockerOcc });
+  villain('locker', 'zyn_3', actors.zynovan, 0, -4.45, 'lean', 0.45, { face: 2, scale: 0.96, override: 'zynovan/locker_stage_3', depth: 1.4, prep: lockerOcc });
+  villain('locker', 'zyn_4', actors.zynovan, 0, -4.25, 'reach', 0.85, { face: 2, y: -0.38, scale: 1.0, override: 'zynovan/locker_stage_4', depth: 0.9, prep: lockerOcc });
   villain('center', 'center_zyn', actors.zynovan, 0, -4.68, 'peek', 0.3, { y: -0.08, scale: 0.94 });
   villain('desks', 'xavier_podium', actors.xavier, 0, 4.82, 'loom', 0.55, { scale: 1.15, override: 'xavier/podium', depth: 4.4 });
   villain('center', 'menu_xavier', actors.xavier, 1.25, -3.9, 'stand', 0.15, { catcher: true });

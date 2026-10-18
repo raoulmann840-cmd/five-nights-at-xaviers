@@ -62,6 +62,8 @@ assets/
 - **Jumpscare frames** play in order, from stage 1 (far away) to the last frame (right in your face). If they exist they replace the built-in 3D jumpscare; delete them to get the 3D version back.
 - **`gameover.png`** appears on the game-over screen; **`poster.png`** is hung on the classroom wall as a framed poster.
 
+**Zynovan (Donny) has real photos in place:** `face.jpg` (locker stages 1–2 and the glimpse through the locker gap), `face_2.jpg` (stages 3–4), a jumpscare that alternates between both, `gameover.jpg` and `poster.jpg`. Any villain can take a `face_2.png`.
+
 **Xavier already has real photos in place:** `face.jpg` (the visor-glasses photo — it replaces his whole face: no 3D teeth, jaw or eyes; the Little Xaviers wear it too), `jumpscare_stage_1–8.jpg` (zoom into the glasses photo), `gameover.jpg` and `poster.jpg`.
 
 **Uploading on GitHub:**
