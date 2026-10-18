@@ -82,15 +82,15 @@ const VILLAINS = {
 };
 
 const NIGHTS = [
-  { steven: 4,  xavier: 0,  minis: 3,  zynovan: 0,
+  { steven: 4,  xavier: 0,  minis: 3,  zynovan: 6,
     msg: '"Detention, Raoul. All night." — X', tip: 'Survive until 6 AM.' },
-  { steven: 7,  xavier: 3,  minis: 5,  zynovan: 2,
+  { steven: 7,  xavier: 3,  minis: 5,  zynovan: 9,
     msg: '"I brought some friends." — X', tip: 'Survive until 6 AM.' },
-  { steven: 9,  xavier: 7,  minis: 7,  zynovan: 7,
+  { steven: 9,  xavier: 7,  minis: 7,  zynovan: 12,
     msg: '"Something new moved in tonight." — X', tip: 'Survive until 6 AM.' },
-  { steven: 12, xavier: 11, minis: 9,  zynovan: 11,
+  { steven: 12, xavier: 11, minis: 9,  zynovan: 15,
     msg: '"Pop quiz, Raoul." — X', tip: 'Survive until 6 AM.' },
-  { steven: 16, xavier: 16, minis: 12, zynovan: 15,
+  { steven: 16, xavier: 16, minis: 12, zynovan: 18,
     msg: '"Final exam. I\'m grading you myself." — X', tip: 'Survive until 6 AM.' },
   { steven: 20, xavier: 20, minis: 16, zynovan: 20,
     msg: '"N̷I̵G̴H̸T̷M̶A̵R̸E̶."', tip: 'Survive until 6 AM.' },
@@ -647,9 +647,9 @@ const TexGen = {
 function makeTextures() {
   const T = {};
   T.floor = TexGen.floor();
-  T.block = TexGen.block('#c6c9b7');
-  T.blockLow = TexGen.block('#7d4a44');
-  T.hallBlock = TexGen.block('#a9ae9a');
+  T.block = TexGen.block('#b4bcc6');
+  T.blockLow = TexGen.block('#3d5266');
+  T.hallBlock = TexGen.block('#9aa4ae');
   T.storeBlock = TexGen.block('#8e8a7c');
   T.ceil = TexGen.ceiling();
   T.chalkL = TexGen.chalk([['Welcome back, Raoul :)', 60, 40, 54, -0.02], ['NIGHT  1  2  3  4  5', 70, 150, 44], ['||||  ||||  ||', 90, 220, 50],
@@ -1434,7 +1434,7 @@ uniform sampler2D uAlbedo, uNormal, uDepth;
 uniform vec4 uRect; uniform float uAlpha, uHaze;
 uniform vec2 uTan; uniform float uFar;
 uniform vec3 uLightPos, uLightDir; uniform float uLightOn, uCosOuter, uCosInner;
-uniform vec3 uRedPos, uRedColor; uniform float uRedPower, uAmbient;
+uniform vec3 uRedPos, uRedColor, uAmbColor; uniform float uRedPower, uAmbient;
 void main(){
   vec4 alb = texture2D(uAlbedo, vUV);
   if (alb.a < 0.004) { gl_FragColor = vec4(0.0); return; }
@@ -1450,17 +1450,30 @@ void main(){
   float cd = dot(L, uLightDir);
   float cone = smoothstep(uCosOuter, uCosInner, cd);
   float hot = smoothstep(uCosInner, 1.0, cd);
-  float atten = 1.0 / (1.0 + 0.11 * dist * dist);
+  float atten = 1.0 / (1.0 + 0.09 * dist * dist);
   float ndl = max(dot(N, -L), 0.0);
   vec3 V = normalize(-P), Hh = normalize(V - L);
   float sp = pow(max(dot(N, Hh), 0.0), 48.0) * dt.b * 2.0;
-  vec3 beam = vec3(1.0, 0.92, 0.78) * cone * (1.0 + hot * 1.4) * atten * uLightOn * 4.2;
-  vec3 col = base * beam * (ndl * 0.9 + 0.1) + beam * sp;
+  // ---- screen-space ambient occlusion (background only): soft contact
+  //      shadows in corners and around objects, like FNAF 4's GI renders ----
+  float ao = 1.0;
+  if (uHaze > 0.5) {
+    float occ = 0.0, rad = clamp(0.8 / d, 0.006, 0.06);
+    for (int i = 0; i < 12; i++) {
+      float fi = float(i), a = fi * 2.39996 + 0.5, rr = rad * (0.35 + 0.65 * fract(fi * 0.618));
+      vec4 t = texture2D(uDepth, vUV + vec2(cos(a), sin(a) * 1.7778) * rr);
+      float diff = d - (t.r + t.g / 255.0) * uFar;
+      occ += smoothstep(0.02, 0.2, diff) * (1.0 - smoothstep(0.5, 1.2, diff));
+    }
+    ao = 1.0 - (occ / 12.0) * 0.9;
+  }
+  vec3 beam = vec3(1.0, 0.96, 0.9) * cone * (1.0 + hot * 1.0) * atten * uLightOn * 4.0;
+  vec3 col = (base * beam * (ndl * 0.9 + 0.1) + beam * sp) * ao;
   // ---- red emergency light ----
   vec3 Rv = uRedPos - P; float rd = length(Rv);
   float rn = max(dot(N, Rv / rd), 0.0) * 0.75 + 0.25;
   col += base * uRedColor * uRedPower * rn / (1.0 + 0.35 * rd * rd);
-  col += base * uAmbient;
+  col += base * uAmbColor * uAmbient * ao;
   col += base * dt.a * 2.5;                         // emissive (eyes, signs)
   // ---- volumetric haze in the beam (background only) ----
   vec3 ray = normalize(P);
@@ -1486,9 +1499,13 @@ void main(){
   vec2 tc = sd * outputFrame.zw * inputSize.zw;
   vec2 ab = c * (0.003 + uShake * 0.03) * outputFrame.zw * inputSize.zw;
   vec3 col = vec3(texture2D(uSampler, tc + ab).r, texture2D(uSampler, tc).g, texture2D(uSampler, tc - ab).b);
-  col *= 0.8 + 0.2 * sin(gl_FragCoord.y * 2.2);                                   // CRT scanlines
+  col *= 0.95 + 0.05 * sin(gl_FragCoord.y * 2.2);                                 // faint scanlines
+  float lum = dot(col, vec3(0.299, 0.587, 0.114));
+  col = mix(vec3(lum), col, 0.82);                                                  // slightly desaturated
+  col = mix(col * vec3(0.78, 0.86, 1.2), col * vec3(1.05, 1.0, 0.93), smoothstep(0.04, 0.45, lum)); // blue shadows, warm highlights
+  col = clamp(col, 0.0, 1.0); col = mix(col, col * col * (3.0 - 2.0 * col), 0.35);  // gentle S-curve
   col += (hash(gl_FragCoord.xy * 0.71 + fract(uTime * 13.7) * 91.0) - 0.5) * uGrain;  // film grain
-  col += vec3(0.035, 0.0, 0.0) * (1.0 - smoothstep(0.0, 0.25, dot(col, vec3(0.33)))); // deep red in the blacks
+  col += vec3(0.004, 0.006, 0.018) * (1.0 - smoothstep(0.0, 0.2, lum));            // deep blue-black, never pure black
   col *= smoothstep(0.85, 0.2, length(c * vec2(1.0, 1.1))) * 0.88 + 0.12;           // vignette
   col *= 0.97 + 0.03 * smoothstep(0.0, 0.04, abs(fract(s.y - uTime * 0.11) - 0.5)); // rolling band
   col *= 1.0 - uFlicker;
@@ -1519,10 +1536,10 @@ const Gfx = {
     this.light = new PIXI.UniformGroup({
       uTan: new Float32Array([TAN_X, TAN_Y]), uFar: CONFIG.far,
       uLightPos: new Float32Array([0.18, -0.22, 0.0]), uLightDir: new Float32Array([0, 0, -1]),
-      uLightOn: 0, uCosOuter: Math.cos(0.3), uCosInner: Math.cos(0.15),
-      uRedPos: new Float32Array([0, 1, -5]), uRedColor: new Float32Array([1.0, 0.05, 0.03]), uRedPower: 0.8, uAmbient: 0.012,
+      uLightOn: 0, uCosOuter: Math.cos(0.42), uCosInner: Math.cos(0.2),
+      uRedPos: new Float32Array([0, 1, -5]), uRedColor: new Float32Array([1.0, 0.08, 0.05]), uRedPower: 0.22, uAmbient: 0.02, uAmbColor: new Float32Array([0.4, 0.5, 1.0]),
     });
-    this.post = new PIXI.Filter(undefined, POST_FRAG, { uTime: 0, uFlicker: 0, uShake: 0, uGrain: 0.09 });
+    this.post = new PIXI.Filter(undefined, POST_FRAG, { uTime: 0, uFlicker: 0, uShake: 0, uGrain: 0.06 });
     this.post.resolution = this.app.renderer.resolution;
     this.root.filters = [this.post];
     this.root.filterArea = this.app.screen;
@@ -1897,7 +1914,7 @@ class HallStalker {
 class LockerLurker {
   constructor(level) {
     this.id = 'zynovan'; this.level = level; this.stage = 0;
-    this.timer = CONFIG.startGrace + 6 * rand(0.6, 1.3);
+    this.timer = CONFIG.startGrace + 4.5 * rand(0.6, 1.3);
     this.hold = 0; this.patience = 0; this.bangT = 0; this.cueT = 8;
   }
   update(dt) {
@@ -1922,7 +1939,7 @@ class LockerLurker {
     } else this.hold = 0;
     if (!here) {
       this.timer -= dt;
-      if (this.timer <= 0) { this.timer = 6 * rand(0.6, 1.4); if (roll(this.level)) this.advance(); }
+      if (this.timer <= 0) { this.timer = 4.5 * rand(0.6, 1.4); if (roll(this.level)) this.advance(); }
     }
     if (this.stage >= 1) {
       this.cueT -= dt;
@@ -1938,7 +1955,7 @@ class LockerLurker {
       this.stage === 4 ? 'danger' : this.stage === 3 ? 'whisper' : 'sound');
     if (this.stage === 4) { this.patience = Math.max(3.5, 7.5 - this.level * 0.18); this.hold = 0; }
   }
-  reset() { this.stage = 0; this.hold = 0; this.timer = 6 * rand(1, 1.6); }
+  reset() { this.stage = 0; this.hold = 0; this.timer = 4.5 * rand(0.9, 1.4); }
 }
 
 /* DeskMinis — Little Xaviers gather on the desks behind you. */
@@ -2175,7 +2192,7 @@ function syncGraphics(dt) {
     Gfx.aim(Input.cx, Input.cy);
     const batt = G.battery < 20 ? 0.6 + 0.4 * (G.battery / 20) : 1;
     L.uLightOn = G.flashOn ? batt * (1 + Math.sin(G.t * 13) * 0.015) : 0;
-    L.uCosOuter = Math.cos(0.3 * (G.battery < 20 ? 0.85 : 1));
+    L.uCosOuter = Math.cos(0.42 * (G.battery < 20 ? 0.85 : 1));
     // villains & doors visibility
     const a = G.ai;
     Gfx.setAlpha('steven_far', a.steven.stage === 1 ? 1 : 0); Gfx.setAlpha('steven_near', a.steven.stage === 2 ? 1 : 0);
