@@ -64,6 +64,7 @@
           <button class="btn" data-action="new">New Game</button>
           <div class="night-row" id="night-row"></div>
           <button class="btn" data-action="howto">How to Play</button>
+          <button class="btn" data-action="lore">Lore</button>
           <button class="btn" data-action="guide">Asset Guide</button>
         </nav>
         <p class="menu-footer">A fan-made parody of <em>Five Nights at Freddy's 4</em>. Not affiliated with Scott Cawthon.</p>
@@ -87,9 +88,27 @@
         <ul class="villain-list">
           <li><b class="c-steven">Steven Pivac</b> — the <b>hallway</b>. Footsteps echo down the corridor. Far away? Hit him with the beam and he backs off. <b>Breathing right outside the door?</b> Light OFF — hold the door until he walks away.</li>
           <li><b class="c-xavier">Xavier</b> — the <b>storage closet</b>. Boxes shift; he <i>whispers</i>. Same rules, less patience. He also sends <b>Little Xaviers</b> onto the desks behind you — turn around and flash them away before three gather, or he rises behind the podium.</li>
+          <li><b class="c-harry">Hazza the Cyclist</b> — rides up to <b>either</b> door: the hallway or the storage closet. He's <b>blind</b>, so your flashlight does nothing to him (it won't scare him off, and it won't set him off). Listen for the bike bell and the ticking freewheel, then hold that door shut.</li>
           <li><b class="c-zynovan">Zynovan Snusvac</b> — the <b>supply locker</b>. Listen for metal creaks, the latch clicking, a snus tin rattling. Check it and hold it shut. Fully out? Hold it until the banging stops.</li>
         </ul>
         <p class="dim">There are <b>no on-screen warnings</b>. Stand at a door with the light OFF to <b>listen</b> — sound is your only clue. Audio is 3D (HRTF): wear headphones.</p>
+        <button class="btn back" data-action="menu">&larr; Back</button>
+      </div>
+    </section>
+
+    <section id="screen-lore" class="screen panel-screen hidden">
+      <div class="panel scroll lore">
+        <h2>Lore &mdash; the case files</h2>
+        <h3 class="c-xavier">Xavier</h3>
+        <p>Mr. Xavier ran after-school detention in Classroom 13 for longer than anyone can remember. One winter night the custodian locked up early, with Xavier still inside. They never found him, and detention never ended. He still takes the roll every night, and Raoul's is the only name left on it. The little ones on the desks are what's left of everyone who answered "here".</p>
+        <h3 class="c-steven">Steven Pivac</h3>
+        <p>The most dedicated hall monitor the school ever had. He walked the corridor so many nights in a row that he forgot the way home, and then forgot he'd ever had one. He still checks every hall pass. Through a closed door he can hear you breathing, and he will wait for as long as it takes.</p>
+        <h3 class="c-zynovan">Zynovan Snusvac</h3>
+        <p>He used to be Donny, an ordinary student with one habit. A pouch at recess, a pouch in class, a tin in every pocket. Then the tins started multiplying. His blood thickened into nicotine. His ribs hardened into dispensing slots. One night he folded himself into the supply locker, and what climbed back out was a snus machine wearing Donny's skin. When he's hungry you can hear the tins rattle.</p>
+        <h3 class="c-harry">Hazza the Cyclist</h3>
+        <p>Harry rode to school every single day, rain or shine. One night, racing his bike through the empty corridors, he hit something in the dark, and the handlebars took his eyes. He never got off again. The frame grew up through his hips, the wheels took the place of his legs, and the chain became his spine. Now he's blind, so your flashlight means nothing to him. Listen for the bell.</p>
+        <h3>Raoul Mann</h3>
+        <p>He stayed after class. Big mistake.</p>
         <button class="btn back" data-action="menu">&larr; Back</button>
       </div>
     </section>
@@ -116,6 +135,7 @@
 │   │             jumpscare_stage_1.png … jumpscare_stage_12.png
 │   ├── steven/   face.png  hallway_far.png  hallway_near.png
 │   │             jumpscare_stage_1.png …
+│   ├── harry/    face.png  hallway_far.png  hallway_near.png  jumpscare_stage_*.png
 │   └── zynovan/  face.png  locker_stage_1.png … locker_stage_4.png
 │                 jumpscare_stage_1.png …
 ├── classroom/    center.png  door_left.png  door_right.png  locker.png  desks.png

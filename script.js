@@ -79,20 +79,25 @@ const VILLAINS = {
     quotes: ['"Want a pouch? ...Too late."', '"Supplies are running low, Raoul."',
              '"Shhh. Tins rattle. So do bones."'],
   },
+  harry: {
+    name: 'Hazza the Cyclist',
+    quotes: ['"Ding ding, Raoul."', '"I can\'t see you. I didn\'t need to."', '"Should\'ve locked your door. I don\'t brake."'],
+  },
 };
+const VILLAIN_IDS = Object.keys(VILLAINS);
 
 const NIGHTS = [
-  { steven: 4,  xavier: 0,  minis: 3,  zynovan: 6,
+  { steven: 4,  xavier: 0,  minis: 3,  zynovan: 6, harry: 2,
     msg: '"Detention, Raoul. All night." — X', tip: 'Survive until 6 AM.' },
-  { steven: 7,  xavier: 3,  minis: 5,  zynovan: 9,
+  { steven: 7,  xavier: 3,  minis: 5,  zynovan: 9, harry: 5,
     msg: '"I brought some friends." — X', tip: 'Survive until 6 AM.' },
-  { steven: 9,  xavier: 7,  minis: 7,  zynovan: 12,
+  { steven: 9,  xavier: 7,  minis: 7,  zynovan: 12, harry: 8,
     msg: '"Something new moved in tonight." — X', tip: 'Survive until 6 AM.' },
-  { steven: 12, xavier: 11, minis: 9,  zynovan: 15,
+  { steven: 12, xavier: 11, minis: 9,  zynovan: 15, harry: 12,
     msg: '"Pop quiz, Raoul." — X', tip: 'Survive until 6 AM.' },
-  { steven: 16, xavier: 16, minis: 12, zynovan: 18,
+  { steven: 16, xavier: 16, minis: 12, zynovan: 18, harry: 16,
     msg: '"Final exam. I\'m grading you myself." — X', tip: 'Survive until 6 AM.' },
-  { steven: 20, xavier: 20, minis: 16, zynovan: 20,
+  { steven: 20, xavier: 20, minis: 16, zynovan: 20, harry: 20,
     msg: '"N̷I̵G̴H̸T̷M̶A̵R̸E̶."', tip: 'Survive until 6 AM.' },
 ];
 
@@ -150,7 +155,7 @@ function buildManifest() {
   const m = [];
   const add = (key, path, label, group) => m.push({ key, path, label, group });
   add('player/raoul', 'assets/player/raoul', 'Raoul Mann — headshot', 'player');
-  for (const id of ['xavier', 'steven', 'zynovan']) {
+  for (const id of VILLAIN_IDS) {
     const n = VILLAINS[id].name;
     add(`${id}/face`, `assets/villains/${id}/face`, `${n} — face (pasted on 3D head)`, id);
     add(`${id}/face_2`, `assets/villains/${id}/face_2`, `${n} — second face (used for half his appearances)`, id);
@@ -202,7 +207,7 @@ const Assets = {
       onProgress(++done / total);
     }));
     // Jumpscare frame sequences: jumpscare_stage_1.png, _2, … until one is missing.
-    for (const id of ['xavier', 'steven', 'zynovan']) {
+    for (const id of VILLAIN_IDS) {
       const frames = [];
       for (let i = 1; i <= 12; i++) {
         const r = await this.probe(`assets/villains/${id}/jumpscare_stage_${i}`);
@@ -699,7 +704,7 @@ function makeTextures() {
     x.font = '16px Georgia'; x.fillText('LEARNING CENTER', 128, 300);
   });
   T.posters = [];
-  [['xavier', 'TEACHER OF THE MONTH', 'MR. XAVIER'], ['steven', 'HALL MONITOR', 'STEVEN PIVAC'], ['zynovan', 'SUPPLY MANAGER', 'ZYNOVAN SNUSVAC']].forEach(([id, title, name]) => {
+  [['xavier', 'TEACHER OF THE MONTH', 'MR. XAVIER'], ['steven', 'HALL MONITOR', 'STEVEN PIVAC'], ['zynovan', 'SUPPLY MANAGER', 'ZYNOVAN SNUSVAC'], ['harry', 'CYCLIST OF THE YEAR', 'HAZZA']].forEach(([id, title, name]) => {
     const img = Assets.img(`${id}/poster`);
     if (!img) return;
     T.posters.push(TexGen.sign(256, 340, (x, w, h) => {
@@ -977,11 +982,12 @@ function buildWorld(T) {
   addMesh(new THREE.CircleGeometry(0.2, 32), M({ map: T.clock.map, rough: 0.3, spec: 0.6 }), world, -2.3, 2.62, -4.975);
   addMesh(BOX(0.4, 0.4, 0.08), M({ color: 0x8a8678, rough: 0.6 }), world, 2.3, 2.62, -4.96);
   // posters on the side walls
-  addMesh(new THREE.PlaneGeometry(0.5, 0.66), M({ map: T.rules.map, rough: 0.9 }), world, 0.55, 1.95, 4.985, 0, Math.PI, 0);
+  addMesh(new THREE.PlaneGeometry(0.42, 0.56), M({ map: T.rules.map, rough: 0.9 }), world, 0.42, 1.95, 4.985, 0, Math.PI, 0);
   T.posters.forEach((pt, i) => {   // photo posters: back wall first, then the side walls near the front
-    const spots = [[-0.75, 1.95, 4.985, Math.PI], [-3.985, 1.75, -1.2, Math.PI / 2], [3.985, 1.75, -1.2, -Math.PI / 2]];
-    const [px, py, pz, ry] = spots[i];
-    addMesh(new THREE.PlaneGeometry(0.5, 0.66), M({ map: pt.map, rough: 0.6, spec: 0.35 }), world, px, py, pz, 0, ry, 0);
+    const spots = [[-1.1, 1.95, 4.985], [-0.6, 1.95, 4.985], [-0.1, 1.95, 4.985], [1.75, 1.7, 4.97]];   // last one is pinned to the cork board
+    if (!spots[i]) return;
+    const [px, py, pz] = spots[i];
+    addMesh(new THREE.PlaneGeometry(0.42, 0.56), M({ map: pt.map, rough: 0.6, spec: 0.35 }), world, px, py, pz, 0, Math.PI, 0);
   });
   addMesh(new THREE.PlaneGeometry(0.62, 0.82), M({ map: T.mascot.map, rough: 0.9 }), world, 3.985, 1.75, -0.8, 0, -Math.PI / 2, 0);
   // fluorescent troffers (off), one hanging loose
@@ -1076,7 +1082,45 @@ const HUMANS = {
   xavier:  { skin: '#5e3b26', hair: '#3a2414', top: 'blazer',  sleeves: true,  tie: true },
   steven:  { skin: '#c39478', hair: '#6a645c', top: 'singlet', sleeves: false, tie: false },
   zynovan: { skin: '#d8ae94', hair: '#2a1e16', top: 'shirt',   sleeves: true,  tie: false },
+  harry:   { skin: '#e2a88e', hair: '#5a3c26', top: 'blazer',  sleeves: true,  tie: true, bike: true },
 };
+
+/* A tube between two points (bicycle frame, spokes). */
+function tube(parent, a, b, r, mat) {
+  const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), d = B.clone().sub(A);
+  const m = addMesh(new THREE.CylinderGeometry(r, r, d.length(), 8), mat, parent);
+  m.position.copy(A).add(B).multiplyScalar(0.5);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
+  return m;
+}
+/* Hazza became his bicycle: wheels where his legs were, the frame through his hips. */
+function buildBicycle(g, blood) {
+  const frame = M({ color: 0x1e3a6e, rough: 0.35, metal: 0.5, spec: 0.7 });
+  const steel = M({ color: 0x9a9a9a, rough: 0.3, metal: 0.8, spec: 0.9 });
+  const tyre = M({ color: 0x111111, rough: 0.8 });
+  const R = 0.33;
+  for (const z of [-0.5, 0.52]) {
+    const w = addMesh(new THREE.TorusGeometry(R, 0.028, 10, 40), tyre, g, 0, R + 0.03, z, 0, Math.PI / 2, 0);
+    addMesh(new THREE.TorusGeometry(R - 0.03, 0.01, 6, 40), steel, g, 0, R + 0.03, z, 0, Math.PI / 2, 0);
+    for (let k = 0; k < 16; k++) {
+      const a = (k / 16) * Math.PI * 2;
+      tube(g, [0, R + 0.03, z], [0, R + 0.03 + Math.sin(a) * (R - 0.03), z + Math.cos(a) * (R - 0.03)], 0.003, steel);
+    }
+    addMesh(new THREE.CylinderGeometry(0.03, 0.03, 0.08, 12), steel, g, 0, R + 0.03, z, 0, 0, Math.PI / 2);
+    w.castShadow = true;
+  }
+  const hub = [0, R + 0.03], seat = [0, 0.86, -0.12], head = [0, 0.9, 0.42], bb = [0, 0.32, 0];
+  tube(g, [0, hub[1], -0.5], [0, bb[1], bb[2]], 0.016, frame);        // chain stay
+  tube(g, [0, hub[1], -0.5], [0, seat[1] - 0.04, seat[2]], 0.014, frame);   // seat stay
+  tube(g, [0, bb[1], bb[2]], [0, seat[1], seat[2]], 0.02, frame);     // seat tube (through his hips)
+  tube(g, [0, bb[1], bb[2]], [0, head[1] - 0.08, head[2]], 0.024, frame);   // down tube
+  tube(g, [0, seat[1] - 0.04, seat[2]], [0, head[1], head[2]], 0.02, frame);   // top tube
+  tube(g, [0, head[1] + 0.1, head[2] + 0.02], [0, hub[1], 0.52], 0.016, steel); // fork
+  tube(g, [-0.27, 1.0, 0.44], [0.27, 1.0, 0.44], 0.014, steel);        // handlebars
+  tube(g, [0, head[1], head[2]], [0, 1.0, 0.44], 0.016, steel);        // stem
+  addMesh(new THREE.TorusGeometry(0.1, 0.012, 6, 20), steel, g, 0.05, bb[1], bb[2], 0, Math.PI / 2, 0);   // chainring
+  for (const z of [-0.2, 0.2, 0.45]) addMesh(SPH(0.03, 8, 6), blood, g, 0.02, 0.6 + z * 0.3, z).scale.set(0.6, 1.8, 1.2);   // blood on the frame
+}
 
 /* The pasted-on face photo: unlit, so it shows at full colour in the beam —
  * but not emissive, so it is invisible in the dark (no free hints). */
@@ -1105,10 +1149,11 @@ function buildHuman(id, T, faceTex) {
   const hair = M({ color: H.hair, rough: 0.95, spec: 0.05 });
   const sleeve = H.sleeves ? top : skin;
 
-  // legs
+  // legs (or, for Hazza, a bicycle)
   const hips = new THREE.Group(); hips.position.y = 0.92; g.add(hips);
   addMesh(JOINT(0.17), pants, hips, 0, -0.02, 0).scale.set(1.25, 0.7, 0.8);
-  for (const s of [-1, 1]) {
+  if (H.bike) buildBicycle(g, blood);
+  for (const s of (H.bike ? [] : [-1, 1])) {
     const leg = new THREE.Group(); leg.position.set(s * 0.11, 0, 0); hips.add(leg);
     addMesh(LIMB(0.095, 0.068, 0.44), pants, leg, 0, -0.22, 0);
     addMesh(JOINT(0.068), pants, leg, 0, -0.44, 0);
@@ -1129,6 +1174,11 @@ function buildHuman(id, T, faceTex) {
   const head = new THREE.Group(); head.position.set(0, 0.93, 0); torso.add(head);
   addMesh(SPH(0.19, 28, 22), hair, head).scale.set(1, 1.12, 1);
   for (const s of [-1, 1]) addMesh(SPH(0.04, 10, 8), skin, head, s * 0.19, -0.02, 0).scale.set(0.5, 1, 0.8);
+  if (H.bike) {   // cracked cycling helmet
+    const shell = M({ color: 0xb01818, rough: 0.35, spec: 0.7 });
+    addMesh(new THREE.SphereGeometry(0.225, 24, 14, 0, Math.PI * 2, 0, Math.PI / 2.1), shell, head, 0, 0.06, -0.03).scale.set(1, 0.85, 1.2);
+    for (let k = -2; k <= 2; k++) addMesh(BOX(0.025, 0.02, 0.36), M({ color: 0x111111 }), head, k * 0.07, 0.25 - Math.abs(k) * 0.03, -0.03);
+  }
   if (faceTex) {
     const plate = addMesh(new THREE.PlaneGeometry(0.5, 0.5), faceMaterial(faceTex), head, 0, -0.01, 0.2);
     plate.castShadow = false; head.userData.facePlate = plate;
@@ -1178,6 +1228,7 @@ function pose(g, name, jaw = 0) {
       case 'peek':  if (s > 0) { sh.rotation.set(-1.1, 0, -0.5); el.rotation.x = -0.9; } else sh.rotation.set(-0.1, 0, -0.1); break;
       case 'loom':  sh.rotation.set(-0.95, 0, s * 0.55); el.rotation.x = -0.6; break;
       case 'crouch': sh.rotation.set(-0.3, 0, s * 0.2); el.rotation.x = -1.2; break;
+      case 'ride':  sh.rotation.set(-0.95, 0, -s * 0.05); el.rotation.x = -0.35; break;
     }
   });
   switch (name) {
@@ -1187,6 +1238,7 @@ function pose(g, name, jaw = 0) {
     case 'peek':  r.torso.rotation.set(0.15, 0, 0.18); r.head.rotation.set(0, 0, -0.4); break;
     case 'loom':  r.torso.rotation.x = 0.45; r.head.rotation.x = 0.15; break;
     case 'crouch': r.torso.rotation.x = 0.35; r.head.rotation.set(-0.2, 0, 0.3); break;
+    case 'ride':  r.torso.rotation.x = 0.32; r.head.rotation.set(-0.25, 0, 0.12); break;
   }
   r.jaw.rotation.x = jaw * 0.8;
 }
@@ -1632,6 +1684,10 @@ const Sound = {
     const ir = c.createBuffer(2, c.sampleRate * 2.8, c.sampleRate);
     for (let ch = 0; ch < 2; ch++) { const b = ir.getChannelData(ch); for (let i = 0; i < b.length; i++) b[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / b.length, 3.2); }
     this.reverb = c.createConvolver(); this.reverb.buffer = ir;
+    // a bicycle freewheel ticking (used for Hazza waiting at a door)
+    const fw = c.createBuffer(1, c.sampleRate, c.sampleRate), fd = fw.getChannelData(0);
+    for (let k = 0; k < 9; k++) { const o = Math.floor(k * c.sampleRate / 9); for (let i = 0; i < 260; i++) fd[o + i] = (Math.random() * 2 - 1) * Math.exp(-i / 40) * 0.8; }
+    this.buffers.__freewheel = fw;
     const rg = c.createGain(); rg.gain.value = 0.5; this.reverb.connect(rg).connect(this.master);
     // channels: each zone has a muffle filter (closed door) + a reverb send
     const sends = { hall: 0.7, store: 0.25, locker: 0.15, desks: 0.2, room: 0.12 };
@@ -1763,6 +1819,13 @@ const Sound = {
     this.tone({ freq: 72, freqEnd: 44, dur: 0.3, vol: 0.6, pos, ch: 'room' });
     this.burst({ type: 'bandpass', freq: 3100, q: 18, dur: 0.12, vol: 0.2, pos, ch: 'room', when: 0.02 });  // latch
   },
+  bikeBell(pos, ch, vol = 0.2) {         // ding-ding
+    for (const w of [0, 0.22]) [2250, 3420, 5100].forEach((f, k) => this.tone({ freq: f, dur: 0.9, vol: vol / (k + 1), pos, ch, when: w, attack: 0.002 }));
+  },
+  roll(pos, ch, vol = 0.3) {             // tyres rolling + chain ticking
+    this.burst({ type: 'lowpass', freq: 380, q: 0.6, dur: 1.4, vol, pos, ch, attack: 0.5 });
+    for (let i = 0; i < 18; i++) this.burst({ type: 'highpass', freq: 4500, dur: 0.012, vol: vol * 0.4, pos, ch, when: 0.15 + i * 0.065 });
+  },
   click() { this.tone({ type: 'square', freq: 2400, dur: 0.012, vol: 0.07 }); this.tone({ type: 'square', freq: 900, dur: 0.015, vol: 0.05, when: 0.012 }); },
   run() { this.burst({ type: 'bandpass', freq: 500, q: 0.6, dur: 0.3, vol: 0.16, attack: 0.08 }); this.footstep(null, 'room', 0.12); this.footstep(null, 'room', 0.1, 0.16); },
   screech(pos, ch, vol = 0.25) { this.tone({ type: 'sawtooth', freq: 900, freqEnd: 300, dur: 0.35, vol, pos, ch }); },
@@ -1829,6 +1892,8 @@ const Sound = {
     };
     mk('steven', SPOTS.hallDoor, 'hall', 450, 0.9, 'breathing');
     mk('xavier', SPOTS.storeDoor, 'store', 2800, 5, 'whisper');
+    mk('harry_left', SPOTS.hallDoor, 'hall', 0, 0, '__freewheel');    // a freewheel ticking outside the door
+    mk('harry_right', SPOTS.storeDoor, 'store', 0, 0, '__freewheel');
   },
   setLoop(name, vol, tc = 0.06, freq) {
     const L = this.loops[name]; if (!L || !this.ctx) return;
@@ -1858,6 +1923,10 @@ class HallStalker {
     Object.assign(this, { id, side, level, o });
     this.stage = 0; this.timer = CONFIG.startGrace + o.interval * rand(0.5, 1.2);
     this.patience = 0; this.hold = 0; this.exposure = 0; this.litAtDoor = 0;
+    this.setSide(side);
+  }
+  setSide(side) {
+    this.side = side;
     this.ch = side === 'left' ? 'hall' : 'store';
     this.spots = side === 'left' ? [null, SPOTS.hallFar, SPOTS.hallNear, SPOTS.hallDoor] : [null, SPOTS.storeFar, SPOTS.storeNear, SPOTS.storeDoor];
     this.place = side === 'left' ? 'hallway' : 'storage closet';
@@ -1867,13 +1936,13 @@ class HallStalker {
     if (this.level <= 0 && this.stage === 0) return;
     const here = G.view === this.side && !G.trans;
     const closed = here && G.doors[this.side] > 0.85;
-    const lit = here && G.flashOn && this.layerKey && beamHits(this.layerKey);
+    const lit = !this.o.blind && here && G.flashOn && this.layerKey && beamHits(this.layerKey);
     if (this.stage === 1 || this.stage === 2) {
       if (lit) { this.exposure += dt; if (this.exposure > (this.stage === 1 ? 0.45 : 0.3)) { this.retreat(true); return; } }
       else this.exposure = Math.max(0, this.exposure - dt);
     }
     if (this.stage === 3) {
-      if (here && G.flashOn && !closed) { this.litAtDoor += dt; if (this.litAtDoor > 0.12) { breach(this.id); return; } }
+      if (!this.o.blind && here && G.flashOn && !closed) { this.litAtDoor += dt; if (this.litAtDoor > 0.12) { breach(this.id); return; } }
       else this.litAtDoor = 0;
       if (closed) { this.hold += dt; if (this.hold >= this.o.hold) { this.retreat(false); return; } }
       else { this.hold = Math.max(0, this.hold - dt * 0.5); this.patience -= dt; if (this.patience <= 0) { breach(this.id); return; } }
@@ -1883,12 +1952,16 @@ class HallStalker {
     if (this.timer <= 0) { this.timer = this.o.interval * rand(0.7, 1.3); if (!lit && roll(this.level)) this.advance(); }
   }
   advance() {
+    if (this.stage === 0 && this.o.roam) this.setSide(chance(0.5) ? 'left' : 'right');
     let n = this.stage + 1;
     if (this.stage === 1 && chance(this.o.skip)) n = 3;
     this.stage = n;
     const pos = this.spots[n];
     if (n === 3) { this.patience = Math.max(4, this.o.patience - this.level * 0.18); this.hold = 0; this.litAtDoor = 0; }
-    if (this.id === 'steven') {
+    if (this.id === 'harry') {
+      Sound.roll(pos, this.ch, 0.25 + n * 0.12);
+      if (n < 3) Sound.bikeBell(pos, this.ch, 0.12 + n * 0.08);
+    } else if (this.id === 'steven') {
       Sound.footsteps(pos, this.ch, n === 3 ? 0.7 : 0.55, n === 3 ? 2 : 3, 0.6);
       addAlert(['', '*footsteps echo far down the hallway*', '*heavy footsteps — close, in the hallway*', '*the footsteps stop.*'][n], 'sound');
     } else {
@@ -1898,16 +1971,24 @@ class HallStalker {
   }
   retreat(byLight) {
     this.stage = 0; this.exposure = 0; this.hold = 0; this.timer = this.o.interval * rand(1.2, 1.9);
-    Sound.footsteps(this.spots[2], this.ch, 0.4, 4, 0.45, 0.9);
+    if (this.id === 'harry') Sound.roll(this.spots[1], this.ch, 0.3);
+    else Sound.footsteps(this.spots[2], this.ch, 0.4, 4, 0.45, 0.9);
     if (byLight) { Sound.screech(this.spots[2], this.ch, 0.2); addAlert(`${VILLAINS[this.id].name} recoils from the light.`, 'good'); }
     else addAlert(`*something retreats from the ${this.place} door*`, 'good');
   }
-  cueVolume() { return this.stage === 3 ? (this.id === 'steven' ? 0.9 : 0.7) : 0; }
+  cueVolume() { return this.stage === 3 ? (this.id === 'steven' ? 0.9 : this.id === 'harry' ? 0.8 : 0.7) : 0; }
   listenText() {
     return this.id === 'xavier'
       ? 'whisper, right behind the storage door: "let me in, Raoul…"'
       : '*…slow, wet breathing just outside the classroom door…*';
   }
+}
+
+/* Cyclist — Hazza. Rides up to EITHER door (picks one each run). He's blind:
+ * the flashlight neither repels nor provokes him. Hold the door when he arrives. */
+class Cyclist extends HallStalker {
+  constructor(level) { super('harry', 'left', level, { interval: 4.6, patience: 9, hold: 2.8, skip: 0.2, blind: true, roam: true }); }
+  get layerKey() { return this.stage === 1 ? `harry_${this.side}_far` : this.stage === 2 ? `harry_${this.side}_near` : null; }
 }
 
 /* LockerLurker — Zynovan in the supply locker. 0 empty → 4 fully out. */
@@ -2035,6 +2116,7 @@ function startNight(n) {
     xavier: new HallStalker('xavier', 'right', cfg.xavier, { interval: 4.2, patience: 8.5, hold: 3.2, skip: 0.25 }),
     zynovan: new LockerLurker(cfg.zynovan),
     minis: new DeskMinis(cfg.minis),
+    harry: new Cyclist(cfg.harry || 0),
   };
   setView('center');
   Gfx.jsBox.visible = false; Gfx.content.visible = true;
@@ -2150,7 +2232,7 @@ function updatePlaying(dt) {
   if (on && G.battery < 15 && Math.random() < (15 - G.battery) / 45) on = false;
   G.flashOn = on;
 
-  for (const k of ['steven', 'xavier', 'zynovan', 'minis']) { G.ai[k].update(dt); if (G.state !== 'playing') return; }
+  for (const k of ['steven', 'xavier', 'zynovan', 'minis', 'harry']) { G.ai[k].update(dt); if (G.state !== 'playing') return; }
 
   // Listening: at a door, light off, door open
   const listening = (G.view === 'left' || G.view === 'right') && !busy && !G.flashOn && G.doors[G.view] < 0.5;
@@ -2173,6 +2255,9 @@ function updateAudioMix(dt) {
   Sound.setLoop('steven', G.ai.steven.cueVolume() * (0.12 + shape), 0.05, 380 + 260 * shape);
   const syl = (Math.sin(G.t * 9.3) + Math.sin(G.t * 13.7)) > 0.5 ? 1 : 0.2;
   Sound.setLoop('xavier', G.ai.xavier.cueVolume() * syl, 0.03, 2400 + Math.sin(G.t * 5) * 900);
+  const hz = G.ai.harry;
+  Sound.setLoop('harry_left', hz.side === 'left' ? hz.cueVolume() : 0, 0.05);
+  Sound.setLoop('harry_right', hz.side === 'right' ? hz.cueVolume() : 0, 0.05);
 }
 
 /* --- per-frame graphics state --- */
@@ -2196,6 +2281,10 @@ function syncGraphics(dt) {
     // villains & doors visibility
     const a = G.ai;
     Gfx.setAlpha('steven_far', a.steven.stage === 1 ? 1 : 0); Gfx.setAlpha('steven_near', a.steven.stage === 2 ? 1 : 0);
+    for (const sd of ['left', 'right']) {
+      Gfx.setAlpha(`harry_${sd}_far`, a.harry.side === sd && a.harry.stage === 1 ? 1 : 0);
+      Gfx.setAlpha(`harry_${sd}_near`, a.harry.side === sd && a.harry.stage === 2 ? 1 : 0);
+    }
     Gfx.setAlpha('xavier_far', a.xavier.stage === 1 ? 1 : 0); Gfx.setAlpha('xavier_near', a.xavier.stage === 2 ? 1 : 0);
     for (let s = 1; s <= 4; s++) Gfx.setAlpha(`zyn_${s}`, a.zynovan.stage === s ? 1 : 0);
     Gfx.setAlpha('center_zyn', a.zynovan.stage >= 3 ? 1 : 0);
@@ -2299,7 +2388,7 @@ function resumeGame() { G.state = 'playing'; Sound.resume(); showScreen(null); }
 /* ==========================================================================
  * 12. UI & BOOT
  * ========================================================================== */
-const SCREENS = ['loading', 'menu', 'howto', 'guide', 'intro', 'pause', 'gameover', 'win', 'error'];
+const SCREENS = ['loading', 'menu', 'howto', 'lore', 'guide', 'intro', 'pause', 'gameover', 'win', 'error'];
 function showScreen(name) { SCREENS.forEach((s) => $('#screen-' + s).classList.toggle('hidden', s !== name)); }
 
 let lastHudKey = '';
@@ -2369,7 +2458,7 @@ function buildAssetStatus() {
     const s = Assets.store[e.key] || {};
     row(e.label, s.found, s.found ? `✔ ${s.path}` : '✖ built-in 3D render');
   });
-  for (const id of ['xavier', 'steven', 'zynovan']) {
+  for (const id of VILLAIN_IDS) {
     const n = Assets.jumpscares[id] ? Assets.jumpscares[id].length : 0;
     row(`${VILLAINS[id].name} — jumpscare frames`, n > 0, n ? `✔ ${n} frame(s)` : '✖ built-in 3D frames');
   }
@@ -2392,6 +2481,7 @@ document.addEventListener('click', (e) => {
   switch (b.dataset.action) {
     case 'new': startNight(1); break;
     case 'howto': showScreen('howto'); break;
+    case 'lore': showScreen('lore'); break;
     case 'guide': buildAssetStatus(); showScreen('guide'); break;
     case 'menu': showMenu(); break;
     case 'resume': resumeGame(); break;
@@ -2412,7 +2502,7 @@ async function prerender(setStatus) {
   // face photos → graded textures wrapped on the 3D skulls
   const faces = {}, altFaces = {};
   const faceJobs = [];
-  for (const id of ['xavier', 'steven', 'zynovan']) faceJobs.push([id, 'face', faces], [id, 'face_2', altFaces]);
+  for (const id of VILLAIN_IDS) faceJobs.push([id, 'face', faces], [id, 'face_2', altFaces]);
   for (const [id, slot, into] of faceJobs) {
     const img = Assets.img(`${id}/${slot}`);
     if (!img) continue;
@@ -2429,7 +2519,7 @@ async function prerender(setStatus) {
   }
   for (const id of Object.keys(altFaces)) if (!faces[id]) { faces[id] = altFaces[id]; delete altFaces[id]; }
   const actors = {};
-  for (const id of ['xavier', 'steven', 'zynovan']) {
+  for (const id of VILLAIN_IDS) {
     actors[id] = buildHuman(id, T, faces[id] && faces[id].map);
     actors[id].visible = false; Baker.scene.add(actors[id]);
   }
@@ -2479,6 +2569,7 @@ async function prerender(setStatus) {
     const id = actor.userData.id, plate = actor.userData.facePlate;
     if (plate) plate.material.map = (opts.face === 2 && altFaces[id] ? altFaces[id] : faces[id]).map;
     place(actor, x, opts.y || 0, z, view, poseName, jaw, opts.scale || 1, opts.turn || 0);
+    if (opts.turn && actor.userData.rig) { actor.userData.rig.torso.rotation.y = -opts.turn * 0.8; actor.updateMatrixWorld(true); }
     let L = Baker.bake(view, { subjects: [actor], catcherAt: opts.catcher ? [x, z] : null });
     const ov = opts.override && Assets.img(opts.override);
     if (L && ov) L = overrideLayer(L, ov, opts.depth || 4);
@@ -2490,6 +2581,10 @@ async function prerender(setStatus) {
   villain('left', 'steven_near', actors.steven, -5.7, -3.15, 'lean', 0.35, { catcher: true, override: 'steven/hallway_near', depth: 2.4, prep: hidePanels });
   villain('right', 'xavier_far', actors.xavier, 7.9, -3.45, 'stand', 0.1, { catcher: true, override: 'xavier/hallway_far', depth: 4.6, prep: hidePanels });
   villain('right', 'xavier_near', actors.xavier, 5.2, -3.0, 'lean', 0.4, { catcher: true, override: 'xavier/hallway_near', depth: 1.9, prep: hidePanels });
+  villain('left', 'harry_left_far', actors.harry, -15.5, -2.8, 'ride', 0, { turn: 0.6, catcher: true, override: 'harry/hallway_far', depth: 12, prep: hidePanels });
+  villain('left', 'harry_left_near', actors.harry, -6.4, -3.4, 'ride', 0, { turn: 0.5, catcher: true, override: 'harry/hallway_near', depth: 3, prep: hidePanels });
+  villain('right', 'harry_right_far', actors.harry, 7.6, -2.45, 'ride', 0, { turn: -0.15, catcher: true, override: 'harry/hallway_far', depth: 4.3, prep: hidePanels });
+  villain('right', 'harry_right_near', actors.harry, 5.75, -3.5, 'ride', 0, { turn: 0.5, catcher: true, override: 'harry/hallway_near', depth: 2.4, prep: hidePanels });
   const lockerOcc = () => { W.locker.doors.forEach((d) => { d.visible = false; }); };
   villain('locker', 'zyn_1', actors.zynovan, 0, -4.75, 'crouch', 0, { y: -0.18, scale: 0.92, override: 'zynovan/locker_stage_1', depth: 1.7, prep: lockerOcc });
   villain('locker', 'zyn_2', actors.zynovan, 0.05, -4.68, 'peek', 0.3, { y: -0.08, scale: 0.94, override: 'zynovan/locker_stage_2', depth: 1.6, prep: lockerOcc });
@@ -2506,7 +2601,7 @@ async function prerender(setStatus) {
     m.visible = false;
   }));
   // jumpscares (or user frame sequences)
-  const jsViews = { steven: 'left', xavier: 'right', zynovan: 'locker' };
+  const jsViews = { steven: 'left', xavier: 'right', zynovan: 'locker', harry: 'left' };
   for (const id of ['steven', 'xavier', 'zynovan']) job(`${id} jumpscare`, () => {
     hideActors(); doorsOpen();
     if (id === 'zynovan') setLockerDoors(W.locker, 85);

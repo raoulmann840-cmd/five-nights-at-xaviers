@@ -13,6 +13,7 @@
   --steven: #a28ad6;
   --xavier: #d9a441;
   --zynovan: #8fd06a;
+  --harry: #6aa8e8;
   --font-title: 'Creepster', 'Impact', fantasy;
   --font-text: 'Special Elite', 'Courier New', monospace;
   --font-hud: 'VT323', 'Consolas', monospace;
@@ -225,7 +226,7 @@ kbd {
 }
 .villain-list { padding-left: 1.5em; }
 .villain-list li { margin-bottom: 1cqh; }
-.c-steven { color: var(--steven); } .c-xavier { color: var(--xavier); } .c-zynovan { color: var(--zynovan); }
+.c-steven { color: var(--steven); } .c-xavier { color: var(--xavier); } .c-zynovan { color: var(--zynovan); } .c-harry { color: var(--harry); }
 .dim { color: var(--dim); }
 .small { font-size: 1.1cqw; }
 .asset-status { display: grid; grid-template-columns: 1fr auto; gap: 0.3cqh 2cqw; font-family: var(--font-hud); font-size: 1.5cqw; }
@@ -274,3 +275,6 @@ kbd {
   align-items: center; justify-content: center; font-family: var(--font-hud); font-size: 6vw; text-align: center;
 }
 @media (orientation: portrait) and (max-width: 820px) { #rotate-hint { display: flex; } }
+
+.lore p { margin: 0 0 1.4cqh; }
+.lore h3 { margin-top: 2.2cqh; }
