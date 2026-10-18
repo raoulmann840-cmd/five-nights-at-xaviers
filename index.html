@@ -110,6 +110,8 @@
         <pre class="tree">assets/
 ├── player/raoul.png              ← Raoul Mann headshot (menu &amp; 6 AM)
 ├── villains/
+│   ├── (every villain) gameover.png  ← portrait on the game-over screen
+│   │                   poster.png    ← framed poster on the classroom wall
 │   ├── xavier/   face.png  hallway_far.png  hallway_near.png  podium.png
 │   │             jumpscare_stage_1.png … jumpscare_stage_12.png
 │   ├── steven/   face.png  hallway_far.png  hallway_near.png
@@ -149,6 +151,7 @@
 
     <section id="screen-gameover" class="screen hidden">
       <div class="gameover">
+        <canvas id="go-portrait" class="hidden" width="320" height="320"></canvas>
         <h2 class="glitch" data-text="GAME OVER">GAME OVER</h2>
         <p id="go-who"></p>
         <p id="go-quote"></p>

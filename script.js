@@ -165,6 +165,8 @@ function buildManifest() {
       add(`${id}/hallway_near`, `assets/villains/${id}/hallway_near`, `${n} — near sprite`, id);
     }
     if (id === 'xavier') add('xavier/podium', 'assets/villains/xavier/podium', 'Xavier — behind podium', id);
+    add(`${id}/gameover`, `assets/villains/${id}/gameover`, `${n} — game-over portrait`, id);
+    add(`${id}/poster`, `assets/villains/${id}/poster`, `${n} — classroom wall poster`, id);
   }
   for (const v of CLASSROOM_VIEWS) {
     add(`classroom/${v}`, `assets/classroom/${v}`, `Classroom — ${v}`, 'classroom');
@@ -232,7 +234,7 @@ function coverCanvas(img, w, h) {
  * feathered alpha. Used for faces (before they're wrapped on 3D skulls) and
  * for sprite/jumpscare overrides. Falls back to ctx.filter if tainted.
  */
-function gradePhoto(img, { w, h, feather = 0.6, vignette = 0.85 } = {}) {
+function gradePhoto(img, { w, h, feather = 0.6, vignette = 0.85, contrast = 1.55, crush = 1, lift = 1 } = {}) {
   w = w || Math.min(1024, img.naturalWidth); h = h || Math.round(w * img.naturalHeight / img.naturalWidth);
   const c = coverCanvas(img, w, h), x = c.getContext('2d');
   try {
@@ -241,8 +243,8 @@ function gradePhoto(img, { w, h, feather = 0.6, vignette = 0.85 } = {}) {
       let r = p[i], g = p[i + 1], b = p[i + 2];
       const l = r * 0.299 + g * 0.587 + b * 0.114;
       r = l + (r - l) * 0.35; g = l + (g - l) * 0.35; b = l + (b - l) * 0.35;
-      r = (r - 128) * 1.55 + 128 - 16; g = (g - 128) * 1.55 + 128 - 22; b = (b - 128) * 1.55 + 128 - 28;
-      r *= 1.1; g *= 0.92; b *= 0.8;
+      r = (r - 128) * contrast + 128 - 16 * crush; g = (g - 128) * contrast + 128 - 22 * crush; b = (b - 128) * contrast + 128 - 28 * crush;
+      r *= 1.1 * lift; g *= 0.92 * lift; b *= 0.8 * lift;
       const n = (Math.random() - 0.5) * 26;
       p[i] = r + n; p[i + 1] = g + n; p[i + 2] = b + n;
     }
@@ -634,6 +636,20 @@ function makeTextures() {
     x.fillStyle = '#4a0d0d'; x.font = 'bold 34px Georgia'; x.textAlign = 'center'; x.fillText("XAVIER'S", 128, 270);
     x.font = '16px Georgia'; x.fillText('LEARNING CENTER', 128, 300);
   });
+  T.posters = [];
+  [['xavier', 'TEACHER OF THE MONTH', 'MR. XAVIER'], ['steven', 'HALL MONITOR', 'STEVEN PIVAC'], ['zynovan', 'SUPPLY MANAGER', 'ZYNOVAN SNUSVAC']].forEach(([id, title, name]) => {
+    const img = Assets.img(`${id}/poster`);
+    if (!img) return;
+    T.posters.push(TexGen.sign(256, 340, (x, w, h) => {
+      x.fillStyle = '#d8ccb0'; x.fillRect(0, 0, w, h);
+      x.fillStyle = '#5a1018'; x.fillRect(0, 0, w, 52);
+      x.fillStyle = '#f0d890'; x.font = 'bold 21px Georgia'; x.textAlign = 'center'; x.fillText(title, w / 2, 34);
+      try { x.drawImage(gradePhoto(img, { w: 216, h: 216, feather: 0, vignette: 0.5 }), 20, 64); } catch (e) { /* tainted */ }
+      x.strokeStyle = '#2a1a10'; x.lineWidth = 4; x.strokeRect(20, 64, 216, 216);
+      x.fillStyle = '#2a1a10'; x.font = 'bold 22px Georgia'; x.fillText(name, w / 2, 314);
+      x.fillStyle = 'rgba(60,20,5,0.18)'; x.fillRect(0, h - 40, w, 40);
+    }));
+  });
   T.paper = TexGen.sign(128, 160, (x, w, h) => {
     x.fillStyle = '#e8e6dc'; x.fillRect(0, 0, w, h); x.strokeStyle = 'rgba(80,110,190,0.5)';
     for (let i = 1; i < 14; i++) { x.beginPath(); x.moveTo(0, i * 11); x.lineTo(w, i * 11); x.stroke(); }
@@ -899,7 +915,12 @@ function buildWorld(T) {
   addMesh(new THREE.CircleGeometry(0.2, 32), M({ map: T.clock.map, rough: 0.3, spec: 0.6 }), world, -2.3, 2.62, -4.975);
   addMesh(BOX(0.4, 0.4, 0.08), M({ color: 0x8a8678, rough: 0.6 }), world, 2.3, 2.62, -4.96);
   // posters on the side walls
-  addMesh(new THREE.PlaneGeometry(0.62, 0.82), M({ map: T.rules.map, rough: 0.9 }), world, -3.985, 1.75, -0.8, 0, Math.PI / 2, 0);
+  addMesh(new THREE.PlaneGeometry(0.5, 0.66), M({ map: T.rules.map, rough: 0.9 }), world, 0.55, 1.95, 4.985, 0, Math.PI, 0);
+  T.posters.forEach((pt, i) => {   // photo posters: back wall first, then the side walls near the front
+    const spots = [[-0.75, 1.95, 4.985, Math.PI], [-3.985, 1.75, -1.2, Math.PI / 2], [3.985, 1.75, -1.2, -Math.PI / 2]];
+    const [px, py, pz, ry] = spots[i];
+    addMesh(new THREE.PlaneGeometry(0.5, 0.66), M({ map: pt.map, rough: 0.6, spec: 0.35 }), world, px, py, pz, 0, ry, 0);
+  });
   addMesh(new THREE.PlaneGeometry(0.62, 0.82), M({ map: T.mascot.map, rough: 0.9 }), world, 3.985, 1.75, -0.8, 0, -Math.PI / 2, 0);
   // fluorescent troffers (off), one hanging loose
   const troffer = M({ color: 0x8a8a86, rough: 0.4, spec: 0.6 });
@@ -1074,7 +1095,7 @@ function buildHead(head, id, m, T, faceTex, faceBump) {
     // The photo is wrapped on a sphere segment over the front of the skull, so it
     // is shaded, shadowed and normal-mapped together with the 3D body.
     const faceM = M({ map: faceTex, bump: faceBump, bumpScale: 1.2, rough: 0.55, spec: 0.3, transparent: true });
-    addMesh(new THREE.SphereGeometry(0.248, 48, 32, Math.PI / 2 - 1.05, 2.1, 0.5, 1.25), faceM, head);
+    addMesh(new THREE.SphereGeometry(0.249, 48, 32, Math.PI / 2 - 0.88, 1.76, 0.36, 1.56), faceM, head);
     mouthY = -0.1;
   } else {
     addMesh(SPH(0.14, 24, 16), m.furLight, head, 0, -0.07, 0.17).scale.set(1.15, 0.75, 0.8);
@@ -1166,7 +1187,7 @@ function buildMini(T, faceTex) {
   }
   addMesh(SPH(0.11, 20, 16), fur, g, 0, 0.33, 0);
   if (faceTex) {
-    addMesh(new THREE.SphereGeometry(0.113, 32, 20, Math.PI / 2 - 1.0, 2.0, 0.6, 1.2), M({ map: faceTex, transparent: true, rough: 0.6 }), g, 0, 0.33, 0);
+    addMesh(new THREE.SphereGeometry(0.113, 32, 20, Math.PI / 2 - 0.8, 1.6, 0.45, 1.35), M({ map: faceTex, transparent: true, rough: 0.6 }), g, 0, 0.33, 0);
   } else {
     addMesh(SPH(0.055, 14, 10), lite, g, 0, 0.3, 0.08).scale.set(1.2, 0.8, 0.8);
     for (const s of [-1, 1]) addMesh(SPH(0.014, 8, 6), eye, g, s * 0.04, 0.35, 0.095);
@@ -2070,6 +2091,14 @@ function showGameOver() {
   Sound.staticNoise(2.5, 0.2);
   $('#go-who').textContent = `Raoul Mann was caught by ${V.name}.`;
   $('#go-quote').textContent = pick(V.quotes);
+  const portrait = $('#go-portrait'), img = Assets.img(`${G.js.id}/gameover`);
+  portrait.classList.toggle('hidden', !img);
+  if (img) {
+    const c = portrait.getContext('2d');
+    c.clearRect(0, 0, portrait.width, portrait.height);
+    try { c.drawImage(gradePhoto(img, { w: portrait.width, h: portrait.height, feather: 0.7, vignette: 0.6 }), 0, 0); }
+    catch (e) { c.drawImage(coverCanvas(img, portrait.width, portrait.height), 0, 0); }
+  }
   showScreen('gameover');
 }
 
@@ -2388,7 +2417,7 @@ async function prerender(setStatus) {
     const img = Assets.img(`${id}/face`);
     if (!img) continue;
     try {
-      const c = gradePhoto(img, { w: 512, h: 512, feather: 0.62, vignette: 0.5 });
+      const c = gradePhoto(img, { w: 512, h: 512, feather: 0.72, vignette: 0, contrast: 1.25, crush: 0.25, lift: 1.5 });
       const map = new THREE.CanvasTexture(c); map.colorSpace = THREE.SRGBColorSpace;
       faces[id] = { map, bump: new THREE.CanvasTexture(c) };
     } catch (e) { console.warn('face skipped', e); }
