@@ -95,15 +95,15 @@ const VILLAIN_IDS = Object.keys(VILLAINS);
 const NIGHTS = [
   { steven: 3, xavier: 0, minis: 2, zynovan: 3, harry: 0, kirk: 0,
     msg: '"Detention, Raoul. All night." — X', tip: 'Survive until 6 AM.' },
-  { steven: 5, xavier: 3, minis: 4, zynovan: 5, harry: 3, kirk: 0,
+  { steven: 5, xavier: 3, minis: 4, zynovan: 5, harry: 2, kirk: 0,
     msg: '"I brought some friends." — X', tip: 'Survive until 6 AM.' },
-  { steven: 7, xavier: 6, minis: 6, zynovan: 8, harry: 5, kirk: 3,
+  { steven: 7, xavier: 6, minis: 6, zynovan: 8, harry: 4, kirk: 3,
     msg: '"Something new moved in tonight." — X', tip: 'Survive until 6 AM.' },
-  { steven: 10, xavier: 9, minis: 8, zynovan: 11, harry: 8, kirk: 6,
+  { steven: 10, xavier: 9, minis: 8, zynovan: 11, harry: 6, kirk: 6,
     msg: '"Pop quiz, Raoul." — X', tip: 'Survive until 6 AM.' },
-  { steven: 13, xavier: 13, minis: 10, zynovan: 14, harry: 11, kirk: 9,
+  { steven: 13, xavier: 13, minis: 10, zynovan: 14, harry: 9, kirk: 9,
     msg: '"Final exam. I\'m grading you myself." — X', tip: 'Survive until 6 AM.' },
-  { steven: 18, xavier: 18, minis: 14, zynovan: 18, harry: 18, kirk: 16,
+  { steven: 18, xavier: 18, minis: 14, zynovan: 18, harry: 15, kirk: 16,
     msg: '"N̷I̵G̴H̸T̷M̶A̵R̸E̶."', tip: 'Survive until 6 AM.' },
 ];
 
@@ -1975,10 +1975,10 @@ class HallStalker {
     if (this.stage === 1 && chance(this.o.skip)) n = 3;
     this.stage = n;
     const pos = this.spots[n];
-    if (n === 3) { this.patience = Math.max(4, this.o.patience - this.level * 0.18); this.hold = 0; this.litAtDoor = 0; }
+    if (n === 3) { this.patience = Math.max(this.o.minPatience || 4, this.o.patience - this.level * 0.18); this.hold = 0; this.litAtDoor = 0; }
     if (this.id === 'harry') {
       Sound.roll(pos, this.ch, 0.25 + n * 0.12);
-      if (n < 3) Sound.bikeBell(pos, this.ch, 0.12 + n * 0.08);
+      Sound.bikeBell(pos, this.ch, n === 3 ? 0.3 : 0.12 + n * 0.08);
     } else if (this.id === 'steven') {
       Sound.footsteps(pos, this.ch, n === 3 ? 0.7 : 0.55, n === 3 ? 2 : 3, 0.6);
       addAlert(['', '*footsteps echo far down the hallway*', '*heavy footsteps — close, in the hallway*', '*the footsteps stop.*'][n], 'sound');
@@ -1988,13 +1988,13 @@ class HallStalker {
     }
   }
   retreat(byLight) {
-    this.stage = 0; this.exposure = 0; this.hold = 0; this.timer = this.o.interval * rand(1.2, 1.9);
+    this.stage = 0; this.exposure = 0; this.hold = 0; this.timer = this.o.interval * rand(1.2, 1.9) * (this.o.cooldown || 1);
     if (this.id === 'harry') Sound.roll(this.spots[1], this.ch, 0.3);
     else Sound.footsteps(this.spots[2], this.ch, 0.4, 4, 0.45, 0.9);
     if (byLight) { Sound.screech(this.spots[2], this.ch, 0.2); addAlert(`${VILLAINS[this.id].name} recoils from the light.`, 'good'); }
     else addAlert(`*something retreats from the ${this.place} door*`, 'good');
   }
-  cueVolume() { return this.stage === 3 ? (this.id === 'steven' ? 0.9 : this.id === 'harry' ? 0.8 : 0.7) : 0; }
+  cueVolume() { return this.stage === 3 ? (this.id === 'steven' ? 0.9 : this.id === 'harry' ? 1.0 : 0.7) : 0; }
   listenText() {
     return this.id === 'xavier'
       ? 'whisper, right behind the storage door: "let me in, Raoul…"'
@@ -2005,7 +2005,7 @@ class HallStalker {
 /* Cyclist — Hazza. Rides up to EITHER door (picks one each run). He's blind:
  * the flashlight neither repels nor provokes him. Hold the door when he arrives. */
 class Cyclist extends HallStalker {
-  constructor(level) { super('harry', 'left', level, { interval: 4.6, patience: 9, hold: 2.8, skip: 0.2, blind: true, roam: true }); }
+  constructor(level) { super('harry', 'left', level, { interval: 6.5, patience: 13, minPatience: 7, hold: 2.2, skip: 0, cooldown: 2.2, blind: true, roam: true }); }
   get layerKey() { return this.stage === 1 ? `harry_${this.side}_far` : this.stage === 2 ? `harry_${this.side}_near` : null; }
 }
 
