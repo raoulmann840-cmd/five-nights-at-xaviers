@@ -95,6 +95,7 @@ The in-game **Asset Guide** lists every file it found and which slots are using 
 - **Steven Pivac (hallway).** Footsteps echo down the corridor. If he's down the hall, hit him with the beam. If you hear breathing right outside the door, keep the light **off** and hold the door until he leaves.
 - **Xavier (storage closet and desks).** You'll hear boxes shifting and whispering. He follows Steven's rules but gives up less easily. Little Xaviers climb onto the desks behind you: flash them away before three gather, or Xavier rises behind the podium.
 - **Hazza the Cyclist (either door).** He rides up to the hallway door or the storage door. He's blind, so the flashlight does nothing to him. Listen for the bike bell and the ticking freewheel, then hold that door shut.
+- **Croissant Kirk (middle of the room, from Night 3).** He feeds on attention: keep your light on him and he steps closer; stand in the room with the light off for a few seconds and he backs away. Listen for chewing.
 - **Zynovan Snusvac (supply locker).** You'll hear metal creaks, the latch clicking and a snus tin rattling. Hold the locker shut. If he's fully out, keep holding until the banging stops.
 
 **There are no on-screen warnings — listening is how you survive.** The audio is 3D (HRTF) and follows the direction you're facing. Closed doors muffle sound, and the hallway echoes. Wear headphones.

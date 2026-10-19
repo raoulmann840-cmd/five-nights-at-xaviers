@@ -14,6 +14,7 @@
   --xavier: #d9a441;
   --zynovan: #8fd06a;
   --harry: #6aa8e8;
+  --kirk: #e8b860;
   --font-title: 'Creepster', 'Impact', fantasy;
   --font-text: 'Special Elite', 'Courier New', monospace;
   --font-hud: 'VT323', 'Consolas', monospace;
@@ -226,7 +227,7 @@ kbd {
 }
 .villain-list { padding-left: 1.5em; }
 .villain-list li { margin-bottom: 1cqh; }
-.c-steven { color: var(--steven); } .c-xavier { color: var(--xavier); } .c-zynovan { color: var(--zynovan); } .c-harry { color: var(--harry); }
+.c-steven { color: var(--steven); } .c-xavier { color: var(--xavier); } .c-zynovan { color: var(--zynovan); } .c-harry { color: var(--harry); } .c-kirk { color: var(--kirk); }
 .dim { color: var(--dim); }
 .small { font-size: 1.1cqw; }
 .asset-status { display: grid; grid-template-columns: 1fr auto; gap: 0.3cqh 2cqw; font-family: var(--font-hud); font-size: 1.5cqw; }

@@ -84,22 +84,26 @@ const VILLAINS = {
     quotes: ['"Ding ding, Raoul."', '"I can\'t see you. I didn\'t need to."', '"Should\'ve locked your door. I don\'t brake."'],
   },
 };
+VILLAINS.kirk = {
+  name: 'Croissant Kirk',
+  quotes: ['"You looked. Everyone always looks."', '"Got leaked. Got kirkified. Got YOU."', '"This is a true story, Raoul."'],
+};
 const VILLAIN_IDS = Object.keys(VILLAINS);
 
 /* AI levels per night (0 = absent, 20 = relentless). Tuned to ramp like FNAF 4,
- * just a notch harder: Hazza arrives on Night 2. */
+ * just a notch harder: Hazza arrives on Night 2, Croissant Kirk on Night 3. */
 const NIGHTS = [
-  { steven: 3, xavier: 0, minis: 2, zynovan: 3, harry: 0,
+  { steven: 3, xavier: 0, minis: 2, zynovan: 3, harry: 0, kirk: 0,
     msg: '"Detention, Raoul. All night." — X', tip: 'Survive until 6 AM.' },
-  { steven: 5, xavier: 3, minis: 4, zynovan: 5, harry: 3,
+  { steven: 5, xavier: 3, minis: 4, zynovan: 5, harry: 3, kirk: 0,
     msg: '"I brought some friends." — X', tip: 'Survive until 6 AM.' },
-  { steven: 7, xavier: 6, minis: 6, zynovan: 8, harry: 5,
+  { steven: 7, xavier: 6, minis: 6, zynovan: 8, harry: 5, kirk: 3,
     msg: '"Something new moved in tonight." — X', tip: 'Survive until 6 AM.' },
-  { steven: 10, xavier: 9, minis: 8, zynovan: 11, harry: 8,
+  { steven: 10, xavier: 9, minis: 8, zynovan: 11, harry: 8, kirk: 6,
     msg: '"Pop quiz, Raoul." — X', tip: 'Survive until 6 AM.' },
-  { steven: 13, xavier: 13, minis: 10, zynovan: 14, harry: 11,
+  { steven: 13, xavier: 13, minis: 10, zynovan: 14, harry: 11, kirk: 9,
     msg: '"Final exam. I\'m grading you myself." — X', tip: 'Survive until 6 AM.' },
-  { steven: 18, xavier: 18, minis: 14, zynovan: 18, harry: 18,
+  { steven: 18, xavier: 18, minis: 14, zynovan: 18, harry: 18, kirk: 16,
     msg: '"N̷I̵G̴H̸T̷M̶A̵R̸E̶."', tip: 'Survive until 6 AM.' },
 ];
 
@@ -168,6 +172,7 @@ function buildManifest() {
       add(`${id}/hallway_near`, `assets/villains/${id}/hallway_near`, `${n} — near sprite`, id);
     }
     if (id === 'xavier') add('xavier/podium', 'assets/villains/xavier/podium', 'Xavier — behind podium', id);
+    if (id === 'kirk') ['room_far', 'room_mid', 'room_near'].forEach((k) => add(`kirk/${k}`, `assets/villains/kirk/${k}`, `Croissant Kirk — ${k.replace('_', ' ')}`, id));
     add(`${id}/gameover`, `assets/villains/${id}/gameover`, `${n} — game-over portrait`, id);
     add(`${id}/poster`, `assets/villains/${id}/poster`, `${n} — classroom wall poster`, id);
   }
@@ -682,7 +687,7 @@ function makeTextures() {
   T.metalDark = TexGen.metal('#5a5a5a', 95);
   T.shelf = TexGen.metal('#7a7d7f', 96);
   T.skin = {}; T.top = {};
-  Object.entries(HUMANS).forEach(([id, H], i) => { T.skin[id] = TexGen.skin(H.skin, 100 + i); T.top[id] = TexGen.cloth(H.top, 200 + i, 1.8); });
+  Object.entries(HUMANS).forEach(([id, H], i) => { T.skin[id] = TexGen.skin(H.skin, 100 + i); T.top[id] = H.top === 'bare' ? TexGen.skin(H.skin, 400 + i) : TexGen.cloth(H.top, 200 + i, 1.8); });
   T.pants = TexGen.cloth('trousers', 300, 0.6);
   T.exit = TexGen.sign(256, 96, (x, w, h) => {
     x.fillStyle = '#1a0606'; x.fillRect(0, 0, w, h); x.fillStyle = '#ff2a1a';
@@ -706,7 +711,7 @@ function makeTextures() {
     x.font = '16px Georgia'; x.fillText('LEARNING CENTER', 128, 300);
   });
   T.posters = [];
-  [['xavier', 'TEACHER OF THE MONTH', 'MR. XAVIER'], ['steven', 'HALL MONITOR', 'STEVEN PIVAC'], ['zynovan', 'SUPPLY MANAGER', 'ZYNOVAN SNUSVAC'], ['harry', 'CYCLIST OF THE YEAR', 'HAZZA']].forEach(([id, title, name]) => {
+  [['xavier', 'TEACHER OF THE MONTH', 'MR. XAVIER'], ['steven', 'HALL MONITOR', 'STEVEN PIVAC'], ['zynovan', 'SUPPLY MANAGER', 'ZYNOVAN SNUSVAC'], ['harry', 'CYCLIST OF THE YEAR', 'HAZZA'], ['kirk', 'WANTED: LEAKED', 'CROISSANT KIRK']].forEach(([id, title, name]) => {
     const img = Assets.img(`${id}/poster`);
     if (!img) return;
     T.posters.push(TexGen.sign(256, 340, (x, w, h) => {
@@ -986,7 +991,7 @@ function buildWorld(T) {
   // posters on the side walls
   addMesh(new THREE.PlaneGeometry(0.42, 0.56), M({ map: T.rules.map, rough: 0.9 }), world, 0.42, 1.95, 4.985, 0, Math.PI, 0);
   T.posters.forEach((pt, i) => {   // photo posters: back wall first, then the side walls near the front
-    const spots = [[-1.1, 1.95, 4.985], [-0.6, 1.95, 4.985], [-0.1, 1.95, 4.985], [1.75, 1.7, 4.97]];   // last one is pinned to the cork board
+    const spots = [[-1.1, 1.95, 4.985], [-0.6, 1.95, 4.985], [-0.1, 1.95, 4.985], [1.75, 1.7, 4.97], [2.6, 1.72, 4.97]];   // last two are pinned to the cork board
     if (!spots[i]) return;
     const [px, py, pz] = spots[i];
     addMesh(new THREE.PlaneGeometry(0.42, 0.56), M({ map: pt.map, rough: 0.6, spec: 0.35 }), world, px, py, pz, 0, Math.PI, 0);
@@ -1085,6 +1090,7 @@ const HUMANS = {
   steven:  { skin: '#c39478', hair: '#6a645c', top: 'singlet', sleeves: false, tie: false },
   zynovan: { skin: '#d8ae94', hair: '#2a1e16', top: 'shirt',   sleeves: true,  tie: false },
   harry:   { skin: '#e2a88e', hair: '#5a3c26', top: 'blazer',  sleeves: true,  tie: true, bike: true },
+  kirk:    { skin: '#e6b48e', hair: '#c9a15e', top: 'bare',    sleeves: false, tie: false, croissant: true },
 };
 
 /* A tube between two points (bicycle frame, spokes). */
@@ -1202,6 +1208,10 @@ function buildHuman(id, T, faceTex) {
     addMesh(LIMB(0.05, 0.038, 0.3), sleeve, el, 0, -0.15, 0);
     const hand = new THREE.Group(); hand.position.set(0, -0.34, 0); el.add(hand);
     addMesh(BOX(0.085, 0.1, 0.04), skin, hand, 0, -0.03, 0);
+    if (H.croissant && s > 0) {   // his croissant, half eaten
+      const pastry = M({ color: 0xc8852f, rough: 0.7, spec: 0.3 });
+      addMesh(new THREE.TorusGeometry(0.06, 0.03, 10, 18, Math.PI * 1.25), pastry, hand, 0, -0.1, 0.05, 0, 0, Math.PI * 0.4).scale.set(1, 1, 0.8);
+    }
     for (let f = 0; f < 4; f++) addMesh(new THREE.CapsuleGeometry(0.009, 0.055, 4, 6), skin, hand, (f - 1.5) * 0.019, -0.11, 0.004, 0.1, 0, 0);
     addMesh(new THREE.CapsuleGeometry(0.01, 0.04, 4, 6), skin, hand, s * -0.045, -0.04, 0.012, 0, 0, s * 0.6);
     addMesh(SPH(0.03, 10, 8), blood, hand, 0, -0.06, 0.02).scale.set(1.3, 1.2, 0.6);         // blood-soaked palm
@@ -1821,6 +1831,12 @@ const Sound = {
     this.tone({ freq: 72, freqEnd: 44, dur: 0.3, vol: 0.6, pos, ch: 'room' });
     this.burst({ type: 'bandpass', freq: 3100, q: 18, dur: 0.12, vol: 0.2, pos, ch: 'room', when: 0.02 });  // latch
   },
+  crunch(pos, vol = 0.15) {               // chewing a croissant
+    for (let i = 0; i < 4; i++) {
+      this.burst({ type: 'bandpass', freq: rand(1800, 3200), q: 2, dur: 0.05, vol, pos, ch: 'room', when: i * 0.32 + rand(0, 0.05) });
+      this.burst({ type: 'lowpass', freq: 300, dur: 0.12, vol: vol * 0.6, pos, ch: 'room', when: i * 0.32 + 0.03 });
+    }
+  },
   bikeBell(pos, ch, vol = 0.2) {         // ding-ding
     for (const w of [0, 0.22]) [2250, 3420, 5100].forEach((f, k) => this.tone({ freq: f, dur: 0.9, vol: vol / (k + 1), pos, ch, when: w, attack: 0.002 }));
   },
@@ -1993,6 +2009,43 @@ class Cyclist extends HallStalker {
   get layerKey() { return this.stage === 1 ? `harry_${this.side}_far` : this.stage === 2 ? `harry_${this.side}_near` : null; }
 }
 
+/* Croissant Kirk — creeps through the middle of the classroom (centre view).
+ * He feeds on attention: keep the beam on him and he steps closer. Stand in
+ * the room with the light OFF for a few seconds and he backs off. While you're
+ * away from the centre he edges closer on his own. Reaching you = breach.
+ * Cue: chewing, louder the closer he is. */
+const KIRK_SPOTS = [null, [-1.3, 1.5, -4.2], [0.6, 1.5, -1.6], [0.05, 1.5, 0.75]];
+class Creeper {
+  constructor(level) {
+    this.id = 'kirk'; this.level = level; this.stage = 0;
+    this.timer = CONFIG.startGrace + 8 * rand(0.8, 1.3); this.lit = 0; this.dark = 0; this.cueT = 3;
+  }
+  update(dt) {
+    if (this.level <= 0 && this.stage === 0) return;
+    const here = G.view === 'center' && !G.trans;
+    if (this.stage > 0) {
+      if (here && G.flashOn && beamHits(`kirk_${this.stage}`, 60)) {
+        this.lit += dt;
+        if (this.lit > 0.7) { this.lit = 0; this.step(1); if (G.state !== 'playing') return; }
+      } else this.lit = Math.max(0, this.lit - dt * 0.5);
+      if (here && !G.flashOn) { this.dark += dt; if (this.dark > 3.2) { this.dark = 0; this.step(-1); } }
+      else this.dark = 0;
+      this.cueT -= dt;
+      if (this.cueT <= 0 && this.stage > 0) { this.cueT = rand(2.5, 5); Sound.crunch(KIRK_SPOTS[this.stage], 0.08 + this.stage * 0.07); }
+    }
+    if (!here) {
+      this.timer -= dt;
+      if (this.timer <= 0) { this.timer = 7 * rand(0.7, 1.3); if (roll(this.level)) this.step(1); }
+    }
+  }
+  step(d) {
+    this.stage = clamp(this.stage + d, 0, 4);
+    if (this.stage === 4) { breach('kirk'); return; }
+    if (d > 0 && this.stage > 0) Sound.crunch(KIRK_SPOTS[this.stage], 0.12 + this.stage * 0.08);
+    if (d < 0) this.timer = 7 * rand(1, 1.5);
+  }
+}
+
 /* LockerLurker — Zynovan in the supply locker. 0 empty → 4 fully out. */
 class LockerLurker {
   constructor(level) {
@@ -2119,6 +2172,7 @@ function startNight(n) {
     zynovan: new LockerLurker(cfg.zynovan),
     minis: new DeskMinis(cfg.minis),
     harry: new Cyclist(cfg.harry || 0),
+    kirk: new Creeper(cfg.kirk || 0),
   };
   setView('center');
   Gfx.jsBox.visible = false; Gfx.content.visible = true;
@@ -2234,7 +2288,7 @@ function updatePlaying(dt) {
   if (on && G.battery < 15 && Math.random() < (15 - G.battery) / 45) on = false;
   G.flashOn = on;
 
-  for (const k of ['steven', 'xavier', 'zynovan', 'minis', 'harry']) { G.ai[k].update(dt); if (G.state !== 'playing') return; }
+  for (const k of ['steven', 'xavier', 'zynovan', 'minis', 'harry', 'kirk']) { G.ai[k].update(dt); if (G.state !== 'playing') return; }
 
   // Listening: at a door, light off, door open
   const listening = (G.view === 'left' || G.view === 'right') && !busy && !G.flashOn && G.doors[G.view] < 0.5;
@@ -2273,7 +2327,7 @@ function syncGraphics(dt) {
     Gfx.aim(VW / 2 + Math.sin(G.t * 0.37) * 470, VH * 0.52 + Math.sin(G.t * 0.61) * 150);
     L.uLightOn = 0.95 + Math.sin(G.t * 31) * 0.03;
     Gfx.setAlpha('menu_xavier', 1);
-    for (const k of ['center_zyn']) Gfx.setAlpha(k, 0);
+    for (const k of ['center_zyn', 'kirk_1', 'kirk_2', 'kirk_3']) Gfx.setAlpha(k, 0);
   } else if (playing) {
     Gfx.setAlpha('menu_xavier', 0);
     Gfx.aim(Input.cx, Input.cy);
@@ -2290,6 +2344,7 @@ function syncGraphics(dt) {
     Gfx.setAlpha('xavier_far', a.xavier.stage === 1 ? 1 : 0); Gfx.setAlpha('xavier_near', a.xavier.stage === 2 ? 1 : 0);
     for (let s = 1; s <= 4; s++) Gfx.setAlpha(`zyn_${s}`, a.zynovan.stage === s ? 1 : 0);
     Gfx.setAlpha('center_zyn', a.zynovan.stage >= 3 ? 1 : 0);
+    for (let k = 1; k <= 3; k++) Gfx.setAlpha(`kirk_${k}`, a.kirk.stage === k ? 1 : 0);
     for (let i = 1; i <= 3; i++) Gfx.setAlpha(`mini_${i}`, a.minis.count >= i ? 1 : 0);
     Gfx.setAlpha('xavier_podium', a.minis.nightmare >= 0 ? clamp(1.2 - a.minis.nightmare / a.minis.nightmareMax, 0.35, 1) : 0);
     for (const [view, key] of Object.entries(VIEW_DOOR)) {
@@ -2593,6 +2648,9 @@ async function prerender(setStatus) {
   villain('locker', 'zyn_3', actors.zynovan, 0, -4.45, 'lean', 0.45, { face: 2, scale: 0.96, override: 'zynovan/locker_stage_3', depth: 1.4, prep: lockerOcc });
   villain('locker', 'zyn_4', actors.zynovan, 0, -4.25, 'reach', 0.85, { face: 2, y: -0.38, scale: 1.0, override: 'zynovan/locker_stage_4', depth: 0.9, prep: lockerOcc });
   villain('center', 'center_zyn', actors.zynovan, 0, -4.68, 'peek', 0.3, { y: -0.08, scale: 0.94 });
+  villain('center', 'kirk_1', actors.kirk, -1.3, -4.2, 'stand', 0, { catcher: true, override: 'kirk/room_far', depth: 6.6 });
+  villain('center', 'kirk_2', actors.kirk, 0.6, -1.6, 'lean', 0, { catcher: true, override: 'kirk/room_mid', depth: 3.8 });
+  villain('center', 'kirk_3', actors.kirk, 0.05, 0.75, 'reach', 0, { catcher: true, override: 'kirk/room_near', depth: 1.4 });
   villain('desks', 'xavier_podium', actors.xavier, 0, 4.82, 'loom', 0.55, { scale: 1.15, override: 'xavier/podium', depth: 4.4 });
   villain('center', 'menu_xavier', actors.xavier, 1.25, -3.9, 'stand', 0.15, { catcher: true });
   [[-1.6, 2.4], [1.6, 2.4], [0.0, 3.5]].forEach(([x, z], i) => job(`mini ${i + 1}`, () => {
@@ -2603,7 +2661,7 @@ async function prerender(setStatus) {
     m.visible = false;
   }));
   // jumpscares (or user frame sequences)
-  const jsViews = { steven: 'left', xavier: 'right', zynovan: 'locker', harry: 'left' };
+  const jsViews = { steven: 'left', xavier: 'right', zynovan: 'locker', harry: 'left', kirk: 'center' };
   for (const id of ['steven', 'xavier', 'zynovan']) job(`${id} jumpscare`, () => {
     hideActors(); doorsOpen();
     if (id === 'zynovan') setLockerDoors(W.locker, 85);
