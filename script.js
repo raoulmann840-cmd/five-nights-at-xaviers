@@ -86,18 +86,20 @@ const VILLAINS = {
 };
 const VILLAIN_IDS = Object.keys(VILLAINS);
 
+/* AI levels per night (0 = absent, 20 = relentless). Tuned to ramp like FNAF 4,
+ * just a notch harder: Hazza arrives on Night 2. */
 const NIGHTS = [
-  { steven: 4,  xavier: 0,  minis: 3,  zynovan: 6, harry: 2,
+  { steven: 3, xavier: 0, minis: 2, zynovan: 3, harry: 0,
     msg: '"Detention, Raoul. All night." — X', tip: 'Survive until 6 AM.' },
-  { steven: 7,  xavier: 3,  minis: 5,  zynovan: 9, harry: 5,
+  { steven: 5, xavier: 3, minis: 4, zynovan: 5, harry: 3,
     msg: '"I brought some friends." — X', tip: 'Survive until 6 AM.' },
-  { steven: 9,  xavier: 7,  minis: 7,  zynovan: 12, harry: 8,
+  { steven: 7, xavier: 6, minis: 6, zynovan: 8, harry: 5,
     msg: '"Something new moved in tonight." — X', tip: 'Survive until 6 AM.' },
-  { steven: 12, xavier: 11, minis: 9,  zynovan: 15, harry: 12,
+  { steven: 10, xavier: 9, minis: 8, zynovan: 11, harry: 8,
     msg: '"Pop quiz, Raoul." — X', tip: 'Survive until 6 AM.' },
-  { steven: 16, xavier: 16, minis: 12, zynovan: 18, harry: 16,
+  { steven: 13, xavier: 13, minis: 10, zynovan: 14, harry: 11,
     msg: '"Final exam. I\'m grading you myself." — X', tip: 'Survive until 6 AM.' },
-  { steven: 20, xavier: 20, minis: 16, zynovan: 20, harry: 20,
+  { steven: 18, xavier: 18, minis: 14, zynovan: 18, harry: 18,
     msg: '"N̷I̵G̴H̸T̷M̶A̵R̸E̶."', tip: 'Survive until 6 AM.' },
 ];
 
